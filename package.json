@@ -1,0 +1,47 @@
+{
+  "name": "siashare",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server/server.js",
+  "type": "module",
+  "scripts": {
+    "clean": "rimraf dist/",
+    "build:client": "webpack",
+    "build:server": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve:api": "tsc-watch --onSuccess \"node .\"",
+    "serve:ui": "webpack --watch",
+    "start": "concurrently npm:serve:api npm:serve:ui"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.0.1",
+    "css-loader": "^6.7.3",
+    "express": "^4.18.2",
+    "html-webpack-plugin": "^5.5.3",
+    "nodemon": "^2.0.22",
+    "rimraf": "^5.0.1",
+    "source-map-loader": "^4.0.1",
+    "style-loader": "^3.3.2",
+    "ts-loader": "^9.4.2",
+    "tsc-watch": "^6.0.4",
+    "typescript": "^5.0.4",
+    "webpack": "^5.82.0",
+    "webpack-cli": "^5.0.2",
+    "webpack-dev-server": "^4.13.3"
+  },
+  "dependencies": {
+    "@tus/file-store": "^1.0.0-beta.1",
+    "@tus/server": "^1.0.0-beta.5",
+    "@uppy/core": "^3.2.0",
+    "@uppy/dashboard": "^3.4.0",
+    "@uppy/tus": "^3.1.0",
+    "config": "^3.3.9",
+    "node-fetch": "^3.3.1",
+    "sqlite": "^4.2.0",
+    "sqlite3": "^5.1.6",
+    "wormhole-crypto": "^0.3.1"
+  }
+}

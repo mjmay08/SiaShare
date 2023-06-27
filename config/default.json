@@ -1,0 +1,15 @@
+{
+  // The port that SiaShare will run on
+  "port": 3001,
+  // Root directory where all files will be stored on Sia
+  // Calls to the /api/worker/objects/:path will have the ":path" prepended with this value
+  "siaRootDir": "siashare",
+  // Local directory where uploads will be cached before uploading to Sia
+  "cacheDir": "C:\\temp",
+  // Local directory where SQLite db containing SiaShare metadata will be created
+  "dbDir": "C:\\temp",
+  // Sia API URL (default port is 9880 for testnet 9980 for mainnet)
+  "siaUrl": "http://localhost:9880",
+  // Password for sia API
+  "siaAPIPassword": "test"
+}

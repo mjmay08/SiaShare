@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "es6",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "outDir": "dist/server",
+    "baseUrl": "."
+  },
+  "include": ["src/**/*", "webpack.config.js"],
+  "exclude": ["src/client/**/*"]
+}
