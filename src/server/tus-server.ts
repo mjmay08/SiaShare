@@ -2,6 +2,7 @@ import { Server, Upload } from '@tus/server';
 import { FileStore } from '@tus/file-store';
 import type http from 'node:http';
 import fs from 'fs';
+import path from 'path';
 import { SiaService } from './sia-service.js';
 import { Metadata } from './metadata.js';
 
@@ -29,15 +30,27 @@ export class TusServer {
         return (this.server.datastore as FileStore).read(fileId);
     }
 
+    public readFileWithRange(fileId: string, start: number, end: number) {
+        return fs.createReadStream(path.join((this.server.datastore as FileStore).directory, fileId), { start, end});
+    }
+
+    public getFileStats(fileId: string) {
+        return fs.statSync(path.join((this.server.datastore as FileStore).directory, fileId));
+    }
+
     private onUploadCreate = async (req: http.IncomingMessage, res: http.ServerResponse<http.IncomingMessage>, upload: Upload) => {
         console.log("Uploading to room: " + req.headers['x-room-id']);
-        const roomId = req.headers['x-room-id'];
+        const roomId: string = req.headers['x-room-id'] as string;
         if (!roomId) {
             throw { status_code: 400, body: "Missing/invalid x-room-id header" };
         }
-        const writerAuthToken = req.headers['x-writer-auth-token'];
+        const writerAuthToken: string = req.headers['x-writer-auth-token'] as string;
         if (!writerAuthToken) {
             throw { status_code: 400, body: "Missing/invalid x-writer-auth-token header"}
+        }
+        const fileId: string = req.headers['x-file-id'] as string;
+        if (!fileId) {
+            throw { status_code: 400, body: "Missing/invalid x-file-id header"}
         }
 
         const room = await this.metadata.getRoomById(roomId);
@@ -48,6 +61,9 @@ export class TusServer {
             throw { status_code: 403, body: `Incorrect writerAuthToken`}
         }
 
+        // Add file to db
+        await this.metadata.addFileToRoom(roomId, upload.id, fileId, false);
+
         return res;
     }
 
@@ -56,8 +72,14 @@ export class TusServer {
         const roomId: string = req.headers['x-room-id'] as string;
         const filePath = this.localCacheDir + "\\" + upload.id;
         const readStream = fs.createReadStream(filePath);
+        const fileId: string = req.headers['x-file-id'] as string;
+        if (!fileId) {
+            throw { status_code: 400, body: "Missing/invalid x-file-id header"}
+        }
 
-       this.siaService.uploadFile(readStream, roomId, upload.id);
+        await this.metadata.updateFileStatus(roomId, upload.id, fileId, true);
+
+        this.siaService.uploadFile(readStream, roomId, upload.id);
 
         return res;
     }

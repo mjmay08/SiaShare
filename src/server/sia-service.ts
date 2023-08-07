@@ -34,18 +34,24 @@ export class SiaService {
         // TODO: what to return??
     }
 
-    public fetchFile(roomId: string, fileId: string): Promise<NodeJS.ReadableStream> {
+    public fetchFile(roomId: string, fileId: string, rangeHeader: string): Promise<NodeJS.ReadableStream> {
 
         const requestOptions: RequestInit = {
             method: 'GET',
             redirect: 'follow',
             headers: {
                 'Authorization': `Basic ${this.siaPassword}`,
+                'Range': rangeHeader
             }
         };
         // TODO: actually handle failure
         return fetch(`${this.siaUrl}/api/worker/objects/${this.siaRootDir}/${roomId}/${fileId}`, requestOptions)
-            .then(response => { return response.body; })
-            .catch(error => { return error; }); // TODO this isn't right for error case
+            .then(response => { 
+                if (response.status === 404) {
+                    console.log("File not found on sia network");
+                    return Promise.reject();
+                }
+                return response.body;
+            });
     }
 }

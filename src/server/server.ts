@@ -9,6 +9,8 @@ import { Metadata } from './metadata.js';
 import { Server as BTServer } from 'bittorrent-tracker';
 import { WebSocketServer } from 'ws';
 import cookieParser from 'cookie-parser';
+import { parseRangeHeader } from './helpers.js';
+
 
 const localCacheDir = config.get('cacheDir'); // Where TUS caches files for now
 const port = config.get('port');
@@ -37,6 +39,7 @@ const tracker = new BTServer({
     ws: true
 });
 
+
 // create application/json parser
 var jsonParser = BodyParser.json()
 // Set up cookie parser
@@ -50,7 +53,7 @@ app.post('/api/room', jsonParser, async function(req, res) {
         res.status(500).send('Missing salt or readerAuthToken');
     }
     const roomId = crypto.randomBytes(8).toString('hex');
-    const writerAuthToken = crypto.randomBytes(20).toString('hex');
+    const writerAuthToken = crypto.randomBytes(16).toString('base64url');
     try {
         await metadata.createRoom(roomId, writerAuthToken, readerAuthToken, salt);
     } catch (e) {
@@ -69,7 +72,7 @@ app.put('/api/room/:id', jsonParser, async function(req, res) {
     console.log(roomId);
     
     const writerAuthToken = req.body.writerAuthToken;
-    const md = req.body.metadata;
+    //const md = req.body.metadata;
     const room = await metadata.getRoomById(roomId);
     if (room === undefined || room.id === undefined) {
         throw { status_code: 400, body: `Room with id ${roomId} not found`}
@@ -78,7 +81,7 @@ app.put('/api/room/:id', jsonParser, async function(req, res) {
         throw { status_code: 403, body: `Incorrect writerAuthToken`}
     }
     try {
-        metadata.updateRoomMetadata(roomId, md);
+        metadata.updateRoomMetadata(roomId, req.body);
     } catch (e) {
         console.log(e);
         throw { status_code: 500, body: `Internal failure`}
@@ -117,17 +120,24 @@ app.get('/api/room/:id', jsonParser, async function(req, res) {
         throw { status_code: 403, body: `Incorrect readerAuthToken`}
     }
     res.cookie('authToken', readerAuthToken);
-    res.json({ metadata: room.metadata });
+    res.json(room);
 });
 
-app.get('/api/room/:id/files/:fileId', jsonParser, async function(req, res) {
+app.get('/api/room/:id/files/:tusId/download/*', jsonParser, async function(req, res) {
     // TODO verify id valid
     const roomId = req.params.id;
-    const fileId = req.params.fileId;
-    console.log(`Fetching room: ${roomId}  file: ${fileId}`);
-    const readerAuthToken = req.headers['x-reader-auth-token'];
+    const tusId = req.params.tusId;
+    console.log(`Fetching room: ${roomId}  tusId: ${tusId}`);
+    let readerAuthToken = req.headers['x-reader-auth-token'];
+    console.log('after get header');
     if (readerAuthToken === undefined) {
-        res.status(400).send('Missing readerAuthToken');
+        var cookie = req.cookies.authToken;
+        if (cookie !== undefined) {
+            readerAuthToken = cookie;
+        } else {
+            res.status(400).send('Missing readerAuthToken');
+            return;
+        }
     }
     
     const room = await metadata.getRoomById(roomId);
@@ -137,15 +147,72 @@ app.get('/api/room/:id/files/:fileId', jsonParser, async function(req, res) {
     if (room.readerAuthToken !== readerAuthToken) {
         throw { status_code: 403, body: `Incorrect readerAuthToken`}
     }
-    // TODO: verify fileId belongs to this roomId
-    // Fetch file from FileStore cache directory
-    const fileReadStream = tusServer.readFileFromFileStore(fileId);
-    fileReadStream.on('error', function(err) {
-        console.log('Failed to fetch file from FileStore cache, fetching from Sia');
-        siaService.fetchFile(roomId, fileId).then((readableStream) => readableStream.pipe(res));
-        console.log('Sucessfully returned file from Sia network');
-     });
-    fileReadStream.pipe(res);
+
+    const rangeHeader = req.headers.range;
+
+    const fetchFileFromSia = async () => {
+        siaService.fetchFile(roomId, tusId, rangeHeader).then(
+            (readableStream) => {
+                readableStream.pipe(res);
+                console.log('Sucessfully returned file from Sia network');
+            },
+             (err) =>  {
+                console.log(err);
+                res.status(404).send("Unable to return file");
+            }
+        );
+    }
+
+    try {
+        const fileStats = tusServer.getFileStats(tusId);
+        const [start, end] = parseRangeHeader(rangeHeader, fileStats.size);
+        // TODO: verify fileId belongs to this roomId
+        // Fetch file from FileStore cache directory
+        const fileReadStream = tusServer.readFileWithRange(tusId, start, end);
+        fileReadStream.on('error', function(err) {
+            console.log('Failed to fetch file from FileStore cache, fetching from Sia');
+            fetchFileFromSia();
+        });
+        res.status(206);
+        res.set('Content-Length', `${end-start+1}`);
+        res.set('Content-Range', 'bytes ' + start + '-' + end + '/' + fileStats.size);
+        res.set('Content-Disposition', 'inline; filename=' + 'abc');
+        res.set("Accept-Ranges", "bytes");
+        fileReadStream.pipe(res);
+    } catch (err) {
+        // This would happen if the file no longer exists in tus FileStore
+        console.log(err);
+        fetchFileFromSia();
+    }
+});
+
+app.get('/api/room/:id/files/:fileId/status', jsonParser, async function(req, res) {
+    // TODO verify id valid
+    const roomId = req.params.id;
+    const fileId = req.params.fileId;
+    console.log(`Fetching room: ${roomId}  file: ${fileId}`);
+    let readerAuthToken = req.headers['x-reader-auth-token'];
+    if (readerAuthToken === undefined) {
+        var cookie = req.cookies.authToken;
+        if (cookie !== undefined) {
+            readerAuthToken = cookie;
+        } else {
+            res.status(400).send('Missing readerAuthToken');
+            return;
+        }
+    }
+    
+    const room = await metadata.getRoomById(roomId);
+    if (room === undefined || room.id === undefined) {
+        throw { status_code: 400, body: `Room with id ${roomId} not found`}
+    }
+    if (room.readerAuthToken !== readerAuthToken) {
+        throw { status_code: 403, body: `Incorrect readerAuthToken`}
+    }
+    
+    const fileStatus = await metadata.getFile(roomId, fileId);
+    console.log(`File status: ${JSON.stringify(fileStatus)}`);
+    res.json(fileStatus);
 });
 
 uploadApp.all('*', tusServer.server.handle.bind(tusServer.server))
