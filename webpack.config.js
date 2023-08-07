@@ -1,6 +1,7 @@
 import  path from 'path';
 import { fileURLToPath } from 'url';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
+import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +31,7 @@ export default {
   plugins: [
     new HtmlWebpackPlugin({
       template: 'src/client/index.html'
-    })
+    }),
+    new NodePolyfillPlugin({})
   ]
 }
