@@ -6,6 +6,8 @@ import config from 'config';
 import { TusServer } from './tus-server.js';
 import { SiaService } from './sia-service.js';
 import { Metadata } from './metadata.js';
+import { Server as BTServer } from 'bittorrent-tracker';
+import { WebSocketServer } from 'ws';
 
 const localCacheDir = config.get('cacheDir'); // Where TUS caches files for now
 const port = config.get('port');
@@ -26,6 +28,13 @@ const siaService = new SiaService();
 // Set up TUS server for handling uploads
 const tusServer = new TusServer(localCacheDir);
 tusServer.initialize(metadata, siaService);
+
+// Set up Bittorrent Tracker
+const tracker = new BTServer({
+    http: false,
+    udp: false,
+    ws: true
+});
 
 // create application/json parser
 var jsonParser = BodyParser.json()
@@ -148,5 +157,10 @@ app.get('*', function (request, response) {
     // Set up the database
     await metadata.initialize();
     // Start the server after db is ready
-    app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
+    const expressServer = app.listen(port, '0.0.0.0', () => console.log(`Server running at http://localhost:${port}`));
+    const wsServer = new WebSocketServer({server: expressServer});
+    wsServer.on('connection', (ws) => tracker.onWebSocketConnection(ws));
+    tracker.on('error', (err) => {
+        console.log(err);
+    });
 })();
