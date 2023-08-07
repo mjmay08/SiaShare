@@ -8,6 +8,7 @@ import { SiaService } from './sia-service.js';
 import { Metadata } from './metadata.js';
 import { Server as BTServer } from 'bittorrent-tracker';
 import { WebSocketServer } from 'ws';
+import cookieParser from 'cookie-parser';
 
 const localCacheDir = config.get('cacheDir'); // Where TUS caches files for now
 const port = config.get('port');
@@ -38,6 +39,8 @@ const tracker = new BTServer({
 
 // create application/json parser
 var jsonParser = BodyParser.json()
+// Set up cookie parser
+app.use(cookieParser());
 
 // Create room
 app.post('/api/room', jsonParser, async function(req, res) {
@@ -113,6 +116,7 @@ app.get('/api/room/:id', jsonParser, async function(req, res) {
     if (room.readerAuthToken !== readerAuthToken) {
         throw { status_code: 403, body: `Incorrect readerAuthToken`}
     }
+    res.cookie('authToken', readerAuthToken);
     res.json({ metadata: room.metadata });
 });
 
