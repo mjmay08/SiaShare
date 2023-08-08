@@ -6,7 +6,11 @@ import parseTorrent from 'parse-torrent';
 import base64 from 'base64-js'
 
 export type RoomMetadataResponse = {
-    torrent?: parseTorrent.Instance
+    torrents: parseTorrent.Instance[]
+}
+
+export type RoomMetadataRequest =  {
+    torrents: string[]
 }
 
 export class Room {
@@ -61,8 +65,8 @@ export class Room {
 
     public async getFiles(): Promise<{name: string, id: string}[] | undefined> {
         const files: { name: string, id: string }[] = [];
-        for (const file of this.metadata.torrent?.files) {
-            const id: string = file.name;
+        for (const torrent of this.metadata.torrents) {
+            const id: string = torrent.files[0].name;
             const name = await this.getDecryptedFilename(id);
             files.push({name, id});
         }
@@ -75,7 +79,8 @@ export class Room {
         client.on('error', function(err) {
             console.log(err);
         });
-        const torrent = client.add(this.metadata.torrent, async (torrent) => {
+        const matchingTorrent = this.metadata.torrents.find((torrent) => torrent.files[0].name === fileId);
+        const torrent = client.add(matchingTorrent, async (torrent) => {
             const file = torrent.files.find(function (file) {
               return file.name === fileId;
             });
@@ -154,15 +159,16 @@ export class Room {
         });
         const room = await getRoomResponse.json();
 
-        const encryptedTorrent = room.encryptedTorrent;
-        const encryptedTorrentByteArray: Uint8Array = toByteArray(encryptedTorrent);
-        const decryptedTorrentByteArray: Uint8Array = await this.keychain.decryptMeta(encryptedTorrentByteArray);
-        const torrentFile = Buffer.from(decryptedTorrentByteArray);
-        const parsedTorrent = await parseTorrent(torrentFile);
+        const metadata: RoomMetadataResponse = { torrents: [] };
 
-        const metadata = {
-            torrent: parsedTorrent as parseTorrent.Instance
-        }
+        const encryptedTorrents: string[] = room.encryptedTorrent.split('.');
+        for (const encryptedTorrent of encryptedTorrents) {
+            const encryptedTorrentByteArray: Uint8Array = toByteArray(encryptedTorrent);
+            const decryptedTorrentByteArray: Uint8Array = await this.keychain.decryptMeta(encryptedTorrentByteArray);
+            const torrentFile = Buffer.from(decryptedTorrentByteArray);
+            const parsedTorrent = await parseTorrent(torrentFile);
+            metadata.torrents.push(parsedTorrent as parseTorrent.Instance);
+        }        
         return metadata;
     }
 }

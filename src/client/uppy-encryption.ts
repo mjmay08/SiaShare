@@ -1,5 +1,5 @@
 import { BasePlugin, PluginOptions } from "@uppy/core";
-import { Room } from "./room";
+import { Room, RoomMetadataRequest } from "./room";
 import WebTorrent from 'webtorrent/dist/webtorrent.min.js'
 
 export interface UppyEncryptionOptions extends PluginOptions {
@@ -48,37 +48,43 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
         });
 
         const afterEncryptionComplete = async () => {
-            const torrentFiles: any[] = [];
-            const metadata: any = {};
-            let torrentName: string = 'torrent';
-            for (const fileID of fileIDs) {
+            const client = new WebTorrent();
+            const promises: Promise<Buffer>[] = await fileIDs.map(async (fileID) => {
                 const file = this.uppy.getFile(fileID);
                 const fileContent: any = file.data;
                 const encryptedFilename: string = await this.room.getEncryptedFilename(file.name);
                 fileContent.name = encryptedFilename;
                 this.uppy.setFileMeta(fileID, { encryptedId: encryptedFilename });
-                torrentFiles.push(fileContent);
                 this.uppy.emit('preprocess-complete', file);
-                
-                // In single file cases we need to name the torrent the file's name
-                // This is because webtorrent overwrites file names in single file cases
-                if (fileIDs.length === 1) {
-                    //torrentName = file.name;
-                    torrentName = encryptedFilename;
-                }
-            }
+                // Since we are always using single file torrents, the torrent name will also be used for the file name
+                const torrentName = encryptedFilename;
 
-            const client = new WebTorrent();
-            // TODO: we need to start seeding before we even upload to the server
-            // TODO: this means we need to upload metadata (with magnetURI) before upload via tus. And then update metadata later??
-            const torrent = client.seed(torrentFiles, {
-                //announceList: [['ws:localhost:3001']], // TODO: this needs to come from config
-                announceList: [[]], // Uncomment this to force testing of web seed
-                name: torrentName
-            }, async (torrent) => {
-                metadata.encryptedTorrent = await this.room.keychain.encryptMeta(torrent.torrentFile);
-                const encryptedMetadataStr: string = Buffer.from(metadata.encryptedTorrent).toString('base64');
-                await this.room.finalize(encryptedMetadataStr);
+                return new Promise<Buffer>(function(resolve, reject) {
+                    client.seed(fileContent, {
+                        //announceList: [['ws:localhost:3001']], // TODO: this needs to come from config
+                        announceList: [[]], // Uncomment this to force testing of web seed
+                        name: torrentName
+                    }, async (torrent) => {
+                        
+                        resolve(torrent.torrentFile);
+                    });
+                });
+            });
+            return Promise.all(promises).then(async (buffers: Buffer[]) => {
+                // At this point all files are being seeded, update the metadata for the room.
+                const metadata: RoomMetadataRequest = { 
+                    torrents: []
+                };
+                await Promise.all(buffers.map(async (buffer) => {
+                    const encryptedTorrent: Uint8Array = await this.room.keychain.encryptMeta(buffer);
+                    const encryptedTorrentStr: string = Buffer.from(encryptedTorrent).toString('base64');
+                    metadata.torrents.push(encryptedTorrentStr);
+                }));
+                // Easiest to save as a single string so join all torrent strings using a period since that isn't part of the base64 character set
+                const concatenatedTorrentString = metadata.torrents.join('.');
+                await this.room.finalize(concatenatedTorrentString);
+            }, (err) => {
+                console.log(err);
             });
         };
 
