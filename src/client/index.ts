@@ -3,7 +3,6 @@ import Dashboard from '@uppy/dashboard';
 import Tus from '@uppy/tus';
 import { UppyEncryption } from './uppy-encryption';
 import type { HttpRequest } from 'tus-js-client'
-
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
 import { Room } from './room';
@@ -19,10 +18,10 @@ if (window.location.pathname.length > 1) {
   console.log("Existing room: " + roomId);
   console.log("Key: " + key);
   room = new Room();
-  room.create(roomId, key).then(() => {
-    room.getFiles().forEach((file) => {
+  room.join(roomId, key).then(() => {
+    room.getFiles().then((files) => files?.forEach((file) => {
       const li = document.createElement('li');
-      li.appendChild(document.createTextNode(file.id))
+      li.appendChild(document.createTextNode(file.name))
       const btn = document.createElement('button');
       btn.innerHTML = 'download';
       btn.onclick = function() {
@@ -30,13 +29,13 @@ if (window.location.pathname.length > 1) {
       }
       li.appendChild(btn);
       document.getElementById('file-list')?.appendChild(li);
-    });
+    }));
     document.getElementById('download-view').style.display = "block";
   });
 } else {
   const uppy = new Uppy()
   .use(Dashboard, { inline: true, target: 'body', proudlyDisplayPoweredByUppy: false })
-  .use(Tus, { endpoint: apiBase + 'tus/upload', allowedMetaFields: [], onBeforeRequest: setTusHeaders })
+  .use(Tus, { endpoint: apiBase + 'tus/upload', allowedMetaFields: [], onBeforeRequest: setTusHeaders, removeFingerprintOnSuccess: true })
   .use(UppyEncryption, { onBeforeEncryption: beforeUpload });
 
   uppy.on('complete', (result) => {
@@ -57,6 +56,7 @@ async function setTusHeaders(req: HttpRequest, file: UppyFile) {
   console.log("setTusHeaders: " + room.id);
   req.setHeader('x-room-id', room.id);
   req.setHeader('x-writer-auth-token', room.writerAuthToken);
+  req.setHeader('x-file-id', (<any>file.meta).encryptedId);
 }
 
 function showShareURL(roomId, mainKey) {

@@ -1,8 +1,12 @@
-import { Keychain } from 'wormhole-crypto'
-import { fromByteArray, toByteArray } from 'base64-js'
+import { Keychain } from 'wormhole-crypto';
+import { toByteArray } from 'base64-js';
+import WebTorrent from 'webtorrent/dist/webtorrent.min.js';
+import nodeToWebStream from 'readable-stream-node-to-web';
+import parseTorrent from 'parse-torrent';
+import base64 from 'base64-js'
 
-export type RoomMetadata = {
-    files: Array<{id: string, name: string, size: number}>
+export type RoomMetadataResponse = {
+    torrent?: parseTorrent.Instance
 }
 
 export class Room {
@@ -11,71 +15,120 @@ export class Room {
     public writerAuthToken: string;
     public keychain: Keychain;
     private readonly API_BASE = window.location.origin + '/api/';
-    private metadata: RoomMetadata;
+    private metadata: RoomMetadataResponse;
+    private encoder = new TextEncoder();
+    private decoder = new TextDecoder();
 
-    async create(id?: string, key?: any) {
-        if (key && id) {
-            console.debug(`Attempting to open room: ${id}`);
-            // Existing room, ask the server for the salt corresponding to this room id
-            const salt: string = await this.fetchSaltForRoom(id);
-            // Create keychain
-            this.keychain = new Keychain(key, salt);
-            // Fetch room metadata
-            this.metadata =  await this.fetchRoomMetadata(id);
-            this.id = id;
-        } else {
-            // Creating a new room
-            this.keychain = new Keychain();
-            console.debug('Creating new room');
-            const response = await fetch(this.API_BASE + 'room', {
-                method: 'post',
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    readerAuthToken: await this.keychain.authTokenB64(),
-                    salt: this.keychain.saltB64
-                })
-            });
-            const room = await response.json();
-            this.id = room.id;
-            this.writerAuthToken = room.writerAuthToken;
-        }
+    async create() {
+        // Creating a new room
+        this.keychain = new Keychain();
+        console.debug('Creating new room');
+        const response = await fetch(this.API_BASE + 'room', {
+            method: 'post',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                readerAuthToken: await this.keychain.authTokenB64(),
+                salt: this.keychain.saltB64
+            })
+        });
+        const room = await response.json();
+        this.id = room.id;
+        this.writerAuthToken = room.writerAuthToken;
+        this.keychain.setAuthToken(this.writerAuthToken);
     }
 
-    async finalize(encryptedMetadata: string) {
+    async finalize(encryptedTorrent: string) {
         const response = await fetch(this.API_BASE + 'room/' + this.id, {
             method: 'put',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                metadata: encryptedMetadata,
+                encryptedTorrent,
                 writerAuthToken: this.writerAuthToken
             })
         });
     }
 
-    public getFiles(): {id: string}[] {
-        return this.metadata.files;
+    async join(id: string, key: any) {
+        console.debug(`Attempting to join room: ${id}`);
+        // Existing room, ask the server for the salt corresponding to this room id
+        const salt: string = await this.fetchSaltForRoom(id);
+        // Create keychain
+        this.keychain = new Keychain(key, salt);
+        // Fetch room metadata
+        this.metadata =  await this.fetchRoomMetadata(id);
+        this.id = id;
+    }
+
+    public async getFiles(): Promise<{name: string, id: string}[] | undefined> {
+        const files: { name: string, id: string }[] = [];
+        for (const file of this.metadata.torrent?.files) {
+            const id: string = file.name;
+            const name = await this.getDecryptedFilename(id);
+            files.push({name, id});
+        }
+        return files;
     }
 
     public async downloadFile(fileId) {
-        const fileName: string | undefined = this.metadata.files.find((file) => file.id === fileId)?.name;
-        if (!fileName) {
-            throw new Error('Unknown file');
-        }
-        const getFileResponse = await fetch(this.API_BASE + 'room/' + this.id + "/files/" + fileId, {
+        // First attempt to download directly from peers using WebRTC
+        const client = new WebTorrent();
+        client.on('error', function(err) {
+            console.log(err);
+        });
+        const torrent = client.add(this.metadata.torrent, async (torrent) => {
+            const file = torrent.files.find(function (file) {
+              return file.name === fileId;
+            });
+            var windowUrl = window.URL || window.webkitURL;
+            var decryptedFile = await this.decryptFile(nodeToWebStream(file.createReadStream()));
+            var url = windowUrl.createObjectURL(decryptedFile);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            const decryptedFilename = await this.getDecryptedFilename(file.name);
+            anchor.download = decryptedFilename;
+            anchor.click();
+            windowUrl.revokeObjectURL(url);
+        });
+        torrent.on('download', function (bytes) {
+            console.log('just downloaded: ' + bytes)
+            console.log('total downloaded: ' + torrent.downloaded)
+            console.log('download speed: ' + torrent.downloadSpeed)
+            console.log('progress: ' + torrent.progress)
+        });
+        torrent.on('error', function(err) {
+            console.log(err);
+        });
+        torrent.on('warning', function(err) {
+            console.log(err);
+        });
+
+
+
+        // TODO need to periodically call this API until the file status is "uploaded". Right now this is assuming the file is already uploaded the first time
+        const fileStatusResponse = await fetch(this.API_BASE + 'room/' + this.id + '/files/' + fileId + '/status', {
             method: 'get',
             headers: { 
-                "Content-Type": "application/json",
                 "x-reader-auth-token": await this.keychain.authTokenB64()
             }
         });
-        var windowUrl = window.URL || window.webkitURL;
-        var decryptedFile = await this.decryptFile(getFileResponse.body);
-        var url = windowUrl.createObjectURL(decryptedFile);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = fileName;
-        anchor.click();
-        windowUrl.revokeObjectURL(url);
+        const fileStatus = await fileStatusResponse.json();
+        console.log(`File status: ${JSON.stringify(fileStatus)}`);
+        const webSeedUrl = this.API_BASE + 'room/' + this.id + "/files/" + fileStatus.tusId + "/download/";
+        torrent.addWebSeed(webSeedUrl);
+    }
+
+    public async getEncryptedFilename(filename: string): Promise<string> {
+        const temp1 = this.encoder.encode(filename);
+        const temp: Uint8Array = await this.keychain.encryptMeta(temp1);
+        return base64.fromByteArray(temp).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    public async getDecryptedFilename(encryptedFilename: string): Promise<string> {
+        let replacedChars = encryptedFilename.replace(/\-/g, '+').replace(/\_/g, '/');
+        if( (replacedChars.length % 4) !== 0) replacedChars += "=".repeat(4 - (replacedChars.length % 4));
+        const byteArray = base64.toByteArray(replacedChars);
+        const decryptedByteArray = await this.keychain.decryptMeta(byteArray);
+        return this.decoder.decode(decryptedByteArray);
     }
 
     private async decryptFile(file: ReadableStream): Promise<Blob> {
@@ -91,7 +144,7 @@ export class Room {
         return saltResponse.salt;
     }
 
-    private async fetchRoomMetadata(id: string): Promise<RoomMetadata> {
+    private async fetchRoomMetadata(id: string): Promise<RoomMetadataResponse> {
         const getRoomResponse = await fetch(this.API_BASE + 'room/' + id, {
             method: 'get',
             headers: { 
@@ -101,10 +154,15 @@ export class Room {
         });
         const room = await getRoomResponse.json();
 
-        const encryptedMetadata = room.metadata;
-        const encryptedMetadataByteArray: Uint8Array = toByteArray(encryptedMetadata);
-        const decryptedMetadataByteArray: Uint8Array = await this.keychain.decryptMeta(encryptedMetadataByteArray);
-        const decryptedMetadataString: string = new TextDecoder().decode(decryptedMetadataByteArray);
-        return JSON.parse(decryptedMetadataString);
+        const encryptedTorrent = room.encryptedTorrent;
+        const encryptedTorrentByteArray: Uint8Array = toByteArray(encryptedTorrent);
+        const decryptedTorrentByteArray: Uint8Array = await this.keychain.decryptMeta(encryptedTorrentByteArray);
+        const torrentFile = Buffer.from(decryptedTorrentByteArray);
+        const parsedTorrent = await parseTorrent(torrentFile);
+
+        const metadata = {
+            torrent: parsedTorrent as parseTorrent.Instance
+        }
+        return metadata;
     }
 }

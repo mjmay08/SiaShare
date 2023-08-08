@@ -1,6 +1,6 @@
 import { BasePlugin, PluginOptions } from "@uppy/core";
-import { Room, RoomMetadata } from "./room";
-import { fromByteArray, toByteArray } from 'base64-js'
+import { Room } from "./room";
+import WebTorrent from 'webtorrent/dist/webtorrent.min.js'
 
 export interface UppyEncryptionOptions extends PluginOptions {
     onBeforeEncryption: () => Promise<Room>;
@@ -10,7 +10,6 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
     
     private room: Room;
     private opts: UppyEncryptionOptions;
-    private encoder = new TextEncoder();
 
     constructor(uppy, opts: UppyEncryptionOptions) {
         super(uppy, opts);
@@ -39,7 +38,8 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
             });
             return this.room.keychain.encryptStream(file.data.stream()).then((encryptedStream: ReadableStream) => {
                 return new Response(encryptedStream).blob().then((encryptedBlob: Blob) => {
-                    this.uppy.setFileState(fileID, { data: encryptedBlob});
+                    this.uppy.setFileState(fileID, { data: encryptedBlob}); //ENCRYPTED
+                    //this.uppy.setFileState(fileID, { data: file.data}); // UNENCRYPTED - ONLY FOR TESTING
                 });
             }).catch((err) => {
                 this.uppy.log("UppyEncryption error: " + err);
@@ -47,10 +47,38 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
             });
         });
 
-        const emitPreprocessCompleteForAll = () => {
-            fileIDs.forEach((fileID) => {
+        const afterEncryptionComplete = async () => {
+            const torrentFiles: any[] = [];
+            const metadata: any = {};
+            let torrentName: string = 'torrent';
+            for (const fileID of fileIDs) {
                 const file = this.uppy.getFile(fileID);
+                const fileContent: any = file.data;
+                const encryptedFilename: string = await this.room.getEncryptedFilename(file.name);
+                fileContent.name = encryptedFilename;
+                this.uppy.setFileMeta(fileID, { encryptedId: encryptedFilename });
+                torrentFiles.push(fileContent);
                 this.uppy.emit('preprocess-complete', file);
+                
+                // In single file cases we need to name the torrent the file's name
+                // This is because webtorrent overwrites file names in single file cases
+                if (fileIDs.length === 1) {
+                    //torrentName = file.name;
+                    torrentName = encryptedFilename;
+                }
+            }
+
+            const client = new WebTorrent();
+            // TODO: we need to start seeding before we even upload to the server
+            // TODO: this means we need to upload metadata (with magnetURI) before upload via tus. And then update metadata later??
+            const torrent = client.seed(torrentFiles, {
+                //announceList: [['ws:localhost:3001']], // TODO: this needs to come from config
+                announceList: [[]], // Uncomment this to force testing of web seed
+                name: torrentName
+            }, async (torrent) => {
+                metadata.encryptedTorrent = await this.room.keychain.encryptMeta(torrent.torrentFile);
+                const encryptedMetadataStr: string = Buffer.from(metadata.encryptedTorrent).toString('base64');
+                await this.room.finalize(encryptedMetadataStr);
             });
         };
 
@@ -58,30 +86,11 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
         // above when each is processed?
         // Because it leads to StatusBar showing a weird “upload 6 files” button,
         // while waiting for all the files to complete pre-processing.
-        return Promise.all(promises).then(emitPreprocessCompleteForAll);
+        return Promise.all(promises).then(afterEncryptionComplete);
     };
 
     finalizeUpload = async (fileIDs: string[]) => {
         console.debug('Finalizing upload');
-        const metadata: RoomMetadata = {
-            files: []
-        };
-        fileIDs.map((fileID) => {
-            const file = this.uppy.getFile(fileID);
-            const tusId = file.response.uploadURL.split('/').slice(-1)[0];
-            metadata.files.push({
-               id: tusId,
-               name: file.name,
-               size: file.size 
-            });
-        });
-        const metadataString = JSON.stringify(metadata);
-        
-        const metaAsUint8Array: Uint8Array = this.encoder.encode(metadataString);
-        const encryptedMetadata: Uint8Array = await this.room.keychain.encryptMeta(metaAsUint8Array);
-        const encryptedMetadataStr: string = fromByteArray(encryptedMetadata);
-
-        await this.room.finalize(encryptedMetadataStr);
         // TODO
         // Call API to wait on files being successfully uploaded to Sia https://uppy.io/docs/guides/building-plugins/
     }

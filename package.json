@@ -44,6 +44,7 @@
     "cookie-parser": "^1.4.6",
     "node-fetch": "^3.3.1",
     "node-polyfill-webpack-plugin": "^2.0.1",
+    "readable-stream-node-to-web": "^1.0.1",
     "sqlite": "^4.2.0",
     "sqlite3": "^5.1.6",
     "webtorrent": "^2.1.17",
