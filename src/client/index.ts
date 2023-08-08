@@ -7,6 +7,7 @@ import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
 import { Room } from './room';
 import './index.css';
+import QRCode from 'qrcode';
 
 const apiBase = window.location.origin + '/api/';
 let room: Room;
@@ -62,5 +63,7 @@ async function setTusHeaders(req: HttpRequest, file: UppyFile) {
 function showShareURL(roomId, mainKey) {
     const shareURL = window.location.href + roomId + '#' + mainKey;
     (<HTMLInputElement>document.getElementById("share-url")).value = shareURL;
+    var canvas = document.getElementById('canvas');
+    QRCode.toCanvas(canvas, shareURL);
     document.getElementById("share-box").style.display = "block";
 }
