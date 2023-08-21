@@ -1,6 +1,8 @@
 {
+  // IP Address or Hostname to listen on (Will also be used for self-signed certificate if enabled)
+  "host": "localhost",
   // The port that SiaShare will run on
-  "port": 3001,
+  "port": 443,
   // Root directory where all files will be stored on Sia
   // Calls to the /api/worker/objects/:path will have the ":path" prepended with this value
   "siaRootDir": "siashare",
@@ -11,5 +13,7 @@
   // Sia API URL (default port is 9880 for testnet 9980 for mainnet)
   "siaUrl": "http://localhost:9880",
   // Password for sia API
-  "siaAPIPassword": "test"
+  "siaAPIPassword": "test",
+  // Whether or not to generate self-signed certificate. If false, make sure certificate is provided as per README
+  "generateCert": true
 }

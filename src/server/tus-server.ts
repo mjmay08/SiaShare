@@ -21,6 +21,7 @@ export class TusServer {
             path: '/api/tus/upload',
             // TODO: check out expirationPeriodInMilliseconds for FileStore
             datastore: new FileStore({directory: this.localCacheDir}),
+            respectForwardedHeaders: true,
             onUploadCreate: this.onUploadCreate,
             onUploadFinish: this.onUploadFinish
         });

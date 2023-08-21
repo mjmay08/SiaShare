@@ -1,8 +1,10 @@
 import express from 'express';
+import https from 'https';
 import crypto from 'crypto';
 import BodyParser  from 'body-parser';
 import path from 'path';
 import config from 'config';
+import fs from 'fs';
 import { TusServer } from './tus-server.js';
 import { SiaService } from './sia-service.js';
 import { Metadata } from './metadata.js';
@@ -10,10 +12,12 @@ import { Server as BTServer } from 'bittorrent-tracker';
 import { WebSocketServer } from 'ws';
 import cookieParser from 'cookie-parser';
 import { parseRangeHeader } from './helpers.js';
-
+import { generateCert } from './generateLocalhostCert.js';
 
 const localCacheDir = config.get('cacheDir'); // Where TUS caches files for now
+const host = config.get('host');
 const port = config.get('port');
+const generateCertEnabled = config.get('generateCert');
 
 const app = express();
 const uploadApp = express();
@@ -98,7 +102,8 @@ app.get('/api/room/:id/salt', async function(req, res) {
     
     const room = await metadata.getRoomById(roomId);
     if (room === undefined || room.id === undefined) {
-        throw { status_code: 400, body: `Room with id ${roomId} not found`}
+        res.status(404).send('room not found');
+        return;
     }
     res.json({ salt: room.salt });
 });
@@ -215,6 +220,10 @@ app.get('/api/room/:id/files/:fileId/status', jsonParser, async function(req, re
     res.json(fileStatus);
 });
 
+uploadApp.use((req, res, next) => {
+    req.headers['x-forwarded-proto'] = 'https';
+    next();
+});
 uploadApp.all('*', tusServer.server.handle.bind(tusServer.server))
 app.use('/api/tus/upload', uploadApp);
 
@@ -222,13 +231,22 @@ app.use('/api/tus/upload', uploadApp);
 app.get('*', function (request, response) {
     response.sendFile(path.resolve(staticPath, 'index.html'));
 });
-  
+
 
 (async () => {
+    // Generate cert for localhost. This is temporary.
+    if (generateCertEnabled === true) {
+        await generateCert(host);
+    }
+    const options = {
+        key: fs.readFileSync('temp/certs/key.pem'),
+        cert: fs.readFileSync('temp/certs/cert.cert')
+    }
+    // TODO: handle certificate not found
     // Set up the database
     await metadata.initialize();
     // Start the server after db is ready
-    const expressServer = app.listen(port, '0.0.0.0', () => console.log(`Server running at http://localhost:${port}`));
+    const expressServer = https.createServer(options, app).listen(port, host, () => console.log(`Server running at https://${host}:${port}`));
     const wsServer = new WebSocketServer({server: expressServer});
     wsServer.on('connection', (ws) => tracker.onWebSocketConnection(ws));
     tracker.on('error', (err) => {
