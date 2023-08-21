@@ -30,7 +30,8 @@ export default {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'src/client/index.html'
+      template: 'src/client/index.html',
+      favicon: 'src/client/favicon.ico'
     }),
     new NodePolyfillPlugin({})
   ]
