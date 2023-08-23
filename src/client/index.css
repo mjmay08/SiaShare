@@ -2,6 +2,7 @@ html,
 body {
   height: 100%;
   margin: 0;
+  font-family: cursive;
 }
 
 @keyframes rotate {
@@ -42,7 +43,7 @@ body {
 
 body {
   background-color: #1f1f1f;
-  position: absolute;
+  position: fixed;
   inset: 0;
   display: flex;
   place-content: center;
@@ -57,8 +58,8 @@ body {
 
 
 #upload-view {
-  height: 100%;
-  width: 80%;
+  height: calc(100% - 40px);
+  width: 90%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -69,8 +70,26 @@ body {
   }
 }
 
+#share-view {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  overflow: auto;
+}
+
 .share-url {
-  width: 500px;
+  width: 300px;
+  max-width: 90%;
+  border-radius: 5px;
+  background-color: transparent;
+  height: 30px;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-color: white;
+  border-style: dashed;
+  font-size: medium;
+  color: white;
 }
 
 .logo {
@@ -82,4 +101,104 @@ body {
   max-width: 80%;
   height: 100px;
   max-height: fit-content;
+}
+
+#canvas {
+  height: 150px;
+  width: 150px;
+  border-radius: 20px;
+}
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #1f1f1f;
+  margin: auto;
+  padding: 10px;
+  border: 1px solid #888;
+  width: 175px;
+  height: 220px;
+  margin-top: calc(50vh - 100px);
+  color: white;
+  text-align: center;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+
+.button-64 {
+  display: block;
+  align-items: center;
+  background-image: linear-gradient(144deg,#00f39c,#00aeee);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: rgba(151, 65, 252, 0.2) 0 15px 30px -5px;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  display: flex;
+  font-size: 20px;
+  justify-content: center;
+  line-height: 1em;
+  max-width: 100%;
+  min-width: 140px;
+  padding: 3px;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  cursor: pointer;
+  margin: 10px;
+}
+
+.button-64:active,
+.button-64:hover {
+  outline: 0;
+}
+
+.button-64 span {
+  background-color: rgb(5, 6, 45);
+  padding: 16px 24px;
+  border-radius: 6px;
+  width: 100%;
+  height: 100%;
+  transition: 300ms;
+  box-sizing: border-box;
+}
+
+.button-64:hover span {
+  background: none;
 }

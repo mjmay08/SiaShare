@@ -9,14 +9,27 @@
     <div class="gradient"></div>
     <div id="upload-view">
         <div class="logo"></div>
-        <div id="uploader"></div>
         <!-- Upload view -->
-        <div id="share-box" style="display: none;">
-            <!-- TODO add copy button -->
-            <input id="share-url" class="share-url">
-            <canvas id="canvas"></canvas>
-        </div>
+        <div id="uploader"></div>
         <!-- End upload view -->
+
+        <!-- Share view -->
+        <div id="share-view">
+            <input id="share-url" class="share-url" readonly>
+            <div class="action-buttons">
+                <button id="showQR" class="button-64"><span class="text">Show QR code</span></button>
+                <button id="copyLink" class="button-64"><span class="text">Copy link</span></button>
+            </div>
+            <div id="qrModal" class="modal">
+                <div class="modal-content">
+                  <span id="qrModalClose" class="close">&times;</span>
+                  <p>Scan to download</p>
+                  <canvas id="canvas"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- End share view -->
+
         <!-- Download view -->
         <div id="download-view" style="display: none;">
             <ul id="file-list"></ul>

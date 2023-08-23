@@ -43,7 +43,7 @@ if (window.location.pathname.length > 1) {
     console.log('successful files:', result.successful);
     console.log('failed files:', result.failed);
     uppy.close();
-    showShareURL(room.id, room.keychain.keyB64);
+    showShareView(room.id, room.keychain.keyB64);
   });
 }
 
@@ -60,10 +60,36 @@ async function setTusHeaders(req: HttpRequest, file: UppyFile) {
   req.setHeader('x-file-id', (<any>file.meta).encryptedId);
 }
 
-function showShareURL(roomId, mainKey) {
+function showShareView(roomId, mainKey) {
+    // Set Share link
     const shareURL = window.location.href + roomId + '#' + mainKey;
     (<HTMLInputElement>document.getElementById("share-url")).value = shareURL;
+    // Set up copy link button
+    const copyLinkBtn = document.getElementById('copyLink');
+    if (copyLinkBtn){
+      copyLinkBtn.onclick = function() {
+        navigator.clipboard.writeText(shareURL);
+      }
+    }
+    // Set up QR code
+    const showQRBtn = document.getElementById('showQR');
+    const qrModal = document.getElementById('qrModal');
+    const qrModalClose = document.getElementById('qrModalClose');
+    if (showQRBtn && qrModal && qrModalClose) {
+      showQRBtn.onclick = function() {
+        qrModal.style.display = "block";
+      }
+      qrModalClose.onclick = function() {
+        qrModal.style.display = "none";
+      }
+      window.onclick = function(event) {
+        if (event.target == qrModal) {
+          qrModal.style.display = "none";
+        }
+      }
+    }
     var canvas = document.getElementById('canvas');
     QRCode.toCanvas(canvas, shareURL);
-    document.getElementById("share-box").style.display = "block";
+    // Display the Share View
+    document.getElementById("share-view").style.display = "flex";
 }
