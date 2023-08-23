@@ -3,6 +3,7 @@ body {
   height: 100%;
   margin: 0;
   font-family: cursive;
+  color: white;
 }
 
 @keyframes rotate {
@@ -160,7 +161,6 @@ body {
 
 
 .button-64 {
-  display: block;
   align-items: center;
   background-image: linear-gradient(144deg,#00f39c,#00aeee);
   border: 0;
@@ -201,4 +201,41 @@ body {
 
 .button-64:hover span {
   background: none;
+}
+
+/* Download View */
+#download-view {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 20px;
+  max-height: 90%;
+  max-width: 100%;
+  overflow: auto;
+}
+
+.file-header {
+  margin-left: 10px;
+  font-size: large;
+}
+
+#file-list {
+  padding-left: 10px;
+  width: calc(100% - 10px);
+}
+
+.file-item {
+  list-style-type: none;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px;
+}
+
+.filename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

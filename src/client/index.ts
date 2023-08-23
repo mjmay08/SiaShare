@@ -22,8 +22,13 @@ if (window.location.pathname.length > 1) {
   room.join(roomId, key).then(() => {
     room.getFiles().then((files) => files?.forEach((file) => {
       const li = document.createElement('li');
-      li.appendChild(document.createTextNode(file.name))
+      li.classList.add('file-item');
+      const div = document.createElement('div');
+      div.classList.add('filename');
+      div.appendChild(document.createTextNode(file.name))
+      li.appendChild(div);
       const btn = document.createElement('button');
+      btn.classList.add('button-64');
       btn.innerHTML = 'download';
       btn.onclick = function() {
         room.downloadFile(file.id);
