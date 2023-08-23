@@ -6,17 +6,22 @@
     <title>SiaShare</title>
 </head>
 <body>
-    <!-- Upload view -->
-    <div id="share-box" style="display: none;">
-        <!-- TODO add copy button -->
-        <input id="share-url" class="share-url">
-        <canvas id="canvas"></canvas>
+    <div class="gradient"></div>
+    <div id="upload-view">
+        <div class="logo"></div>
+        <div id="uploader"></div>
+        <!-- Upload view -->
+        <div id="share-box" style="display: none;">
+            <!-- TODO add copy button -->
+            <input id="share-url" class="share-url">
+            <canvas id="canvas"></canvas>
+        </div>
+        <!-- End upload view -->
+        <!-- Download view -->
+        <div id="download-view" style="display: none;">
+            <ul id="file-list"></ul>
+        </div>
+        <!-- End download view -->
     </div>
-    <!-- End upload view -->
-    <!-- Download view -->
-    <div id="download-view" style="display: none;">
-        <ul id="file-list"></ul>
-    </div>
-    <!-- End download view -->
 </body>
 </html>

@@ -1,3 +1,85 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.gradient {
+  --size: 450px;
+  --speed: 30s;
+  --easing: cubic-bezier(0.8, 0.2, 0.2, 0.8);
+
+  width: var(--size);
+  height: var(--size);
+  filter: blur(calc(var(--size) / 5));
+  background-image: linear-gradient(#1f1f1f, #262e65);
+  animation: rotate var(--speed) var(--easing) alternate infinite;
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  position: absolute;
+  z-index: -1;
+}
+
+@media (min-width: 720px) {
+  .gradient {
+    --size: 800px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .gradient {
+    --size: 1100px;
+  }
+}
+
+body {
+  background-color: #1f1f1f;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  place-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* This is just to transition when you change the viewport size. */
+* {
+  transition: all 0.25s ease-out;
+}
+
+
+#upload-view {
+  height: 100%;
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  #uploader {
+    max-width: 100%;
+  }
+}
+
 .share-url {
   width: 500px;
+}
+
+.logo {
+  background-image: url('logo.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  width: 350px;
+  max-width: 80%;
+  height: 100px;
+  max-height: fit-content;
 }

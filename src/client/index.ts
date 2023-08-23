@@ -35,7 +35,7 @@ if (window.location.pathname.length > 1) {
   });
 } else {
   const uppy = new Uppy()
-  .use(Dashboard, { inline: true, target: 'body', proudlyDisplayPoweredByUppy: false })
+  .use(Dashboard, { inline: true, target: '#uploader', proudlyDisplayPoweredByUppy: false, theme: 'dark' })
   .use(Tus, { endpoint: apiBase + 'tus/upload', allowedMetaFields: [], onBeforeRequest: setTusHeaders, removeFingerprintOnSuccess: true })
   .use(UppyEncryption, { onBeforeEncryption: beforeUpload });
 
