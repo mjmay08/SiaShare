@@ -60,9 +60,13 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
                 const torrentName = encryptedFilename;
 
                 return new Promise<Buffer>(function(resolve, reject) {
+                    let trackerURL: string = `wss:${window.location.host}`;
+                    if (window.location.port) {
+                        trackerURL = trackerURL +  `:${window.location.port}`;
+                    }
                     client.seed(fileContent, {
-                        //announceList: [['ws:localhost:3001']], // TODO: this needs to come from config
-                        announceList: [[]], // Uncomment this to force testing of web seed
+                        announceList: [[trackerURL]],
+                        //announceList: [[]], // Uncomment this to force testing of web seed
                         name: torrentName
                     }, async (torrent) => {
                         

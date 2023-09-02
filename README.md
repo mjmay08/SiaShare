@@ -38,7 +38,6 @@
 1. Clone or download the repo.
 2. Run `npm install` to install the required node modules.
 3. Set all configuration values needed in *config/default.json*
-    1. TODO
 4. Run `npm start`. This will start the express server which will serve both the static content used for the UI as well as the server.
 5. Open browser and go to https://<host>:<port> where host and port are the values from *config/default.json*
 

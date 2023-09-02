@@ -119,7 +119,7 @@ export class Room {
         const fileStatus = await fileStatusResponse.json();
         console.log(`File status: ${JSON.stringify(fileStatus)}`);
         const webSeedUrl = this.API_BASE + 'room/' + this.id + "/files/" + fileStatus.tusId + "/download/";
-        torrent.addWebSeed(webSeedUrl);
+        torrent.addWebSeed(webSeedUrl); // Comment this out to force testing of WebRTC peer transfer
     }
 
     public async getEncryptedFilename(filename: string): Promise<string> {
