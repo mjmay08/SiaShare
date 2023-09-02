@@ -22,6 +22,7 @@ export class Room {
     private metadata: RoomMetadataResponse;
     private encoder = new TextEncoder();
     private decoder = new TextDecoder();
+    private afterFinalizeCallback: () => void;
 
     async create() {
         // Creating a new room
@@ -50,6 +51,11 @@ export class Room {
                 writerAuthToken: this.writerAuthToken
             })
         });
+        this.afterFinalizeCallback();
+    }
+
+    public afterFinalize(callback: () => void) {
+        this.afterFinalizeCallback = callback;
     }
 
     async join(id: string, key: any) {

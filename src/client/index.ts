@@ -39,7 +39,7 @@ if (window.location.pathname.length > 1) {
     document.getElementById('download-view').style.display = "block";
   });
 } else {
-  const uppy = new Uppy()
+  const uppy = new Uppy({allowMultipleUploadBatches: false})
   .use(Dashboard, { inline: true, target: '#uploader', proudlyDisplayPoweredByUppy: false, theme: 'dark' })
   .use(Tus, { endpoint: apiBase + 'tus/upload', allowedMetaFields: [], onBeforeRequest: setTusHeaders, removeFingerprintOnSuccess: true })
   .use(UppyEncryption, { onBeforeEncryption: beforeUpload });
@@ -48,13 +48,15 @@ if (window.location.pathname.length > 1) {
     console.log('successful files:', result.successful);
     console.log('failed files:', result.failed);
     uppy.close();
-    showShareView(room.id, room.keychain.keyB64);
   });
 }
 
 async function beforeUpload(): Promise<Room> {
   room = new Room();
   await room.create();
+  room.afterFinalize(() => {
+    showShareView(room.id, room.keychain.keyB64);
+  });
   return Promise.resolve(room);
 }
 
