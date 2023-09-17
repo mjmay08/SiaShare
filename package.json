@@ -6,12 +6,14 @@
   "type": "module",
   "scripts": {
     "clean": "rimraf dist/",
+    "build": "concurrently npm:build:client npm:build:server",
     "build:client": "webpack",
     "build:server": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "prod": "node dist/server/server.js",
     "serve:api": "tsc-watch --onSuccess \"node .\"",
     "serve:ui": "webpack --watch",
-    "start": "concurrently npm:serve:api npm:serve:ui"
+    "start": "concurrently npm:serve:api npm:serve:ui",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
