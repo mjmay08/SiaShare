@@ -1,4 +1,5 @@
 import express from 'express';
+import http from 'http';
 import https from 'https';
 import crypto from 'crypto';
 import BodyParser  from 'body-parser';
@@ -234,19 +235,28 @@ app.get('*', function (request, response) {
 
 
 (async () => {
+    let useHttps: boolean = true;
     // Generate cert for localhost. This is temporary.
     if (generateCertEnabled === true) {
         await generateCert(host);
     }
-    const options = {
-        key: fs.readFileSync('temp/certs/key.pem'),
-        cert: fs.readFileSync('temp/certs/cert.cert')
+    const options: https.ServerOptions = {};
+    try {
+        options.key = fs.readFileSync('temp/certs/key.pem');
+        options.cert = fs.readFileSync('temp/certs/cert.cert');
+    } catch (err) {
+        console.log('Failed to read certificate, will not run with https: ' + err);
+        useHttps = false;
     }
-    // TODO: handle certificate not found
     // Set up the database
     await metadata.initialize();
     // Start the server after db is ready
-    const expressServer = https.createServer(options, app).listen(port, host, () => console.log(`Server running at https://${host}:${port}`));
+    let expressServer;
+    if (useHttps) {
+        expressServer = https.createServer(options, app).listen(port, host, () => console.log(`Server running at https://${host}:${port}`));
+    } else {
+        expressServer = http.createServer(app).listen(port, host, () => console.log(`Server running at http://${host}:${port}`));
+    }
     const wsServer = new WebSocketServer({server: expressServer});
     wsServer.on('connection', (ws) => tracker.onWebSocketConnection(ws));
     tracker.on('error', (err) => {
