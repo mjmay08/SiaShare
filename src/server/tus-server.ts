@@ -71,7 +71,7 @@ export class TusServer {
     private onUploadFinish = async (req: http.IncomingMessage, res: http.ServerResponse<http.IncomingMessage>, upload: Upload) => {
         console.log("Upload complete... sending to Sia");
         const roomId: string = req.headers['x-room-id'] as string;
-        const filePath = this.localCacheDir + "\\" + upload.id;
+        const filePath = path.join(this.localCacheDir, upload.id);
         const readStream = fs.createReadStream(filePath);
         const fileId: string = req.headers['x-file-id'] as string;
         if (!fileId) {

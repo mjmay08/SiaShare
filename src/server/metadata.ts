@@ -1,4 +1,5 @@
 import config from 'config';
+import path from 'path';
 import * as open from 'sqlite';
 import sqlite3 from 'sqlite3';
 
@@ -9,7 +10,7 @@ export class Metadata {
     private readonly dbFilename: string = 'siashare.db';
 
     constructor() {
-        this.dbPath = config.get('dbDir') + `\\${this.dbFilename}`;
+        this.dbPath = path.join(config.get('dbDir'), this.dbFilename);
     }
 
     public async initialize() {
