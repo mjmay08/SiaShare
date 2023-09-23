@@ -222,7 +222,7 @@ app.get('/api/room/:id/files/:fileId/status', jsonParser, async function(req, re
 });
 
 uploadApp.use((req, res, next) => {
-    req.headers['x-forwarded-proto'] = 'https';
+    //req.headers['x-forwarded-proto'] = 'http';
     next();
 });
 uploadApp.all('*', tusServer.server.handle.bind(tusServer.server))

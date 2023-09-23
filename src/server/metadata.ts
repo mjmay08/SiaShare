@@ -1,4 +1,5 @@
 import config from 'config';
+import fs from 'fs';
 import path from 'path';
 import * as open from 'sqlite';
 import sqlite3 from 'sqlite3';
@@ -10,7 +11,11 @@ export class Metadata {
     private readonly dbFilename: string = 'siashare.db';
 
     constructor() {
-        this.dbPath = path.join(config.get('dbDir'), this.dbFilename);
+        const dbDir: string = config.get('dbDir')
+        this.dbPath = path.join(dbDir, this.dbFilename);
+        if (!fs.existsSync(dbDir)){
+            fs.mkdirSync(dbDir, { recursive: true });
+        }
     }
 
     public async initialize() {

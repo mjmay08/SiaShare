@@ -1,17 +1,17 @@
 {
   // IP Address or Hostname to listen on (Will also be used for self-signed certificate if enabled)
-  "host": "localhost",
+  "host": "0.0.0.0",
   // The port that SiaShare will run on
   "port": 8080,
   // Root directory where all files will be stored on Sia
   // Calls to the /api/worker/objects/:path will have the ":path" prepended with this value
   "siaRootDir": "siashare",
   // Local directory where uploads will be cached before uploading to Sia
-  "cacheDir": "C:\\temp",
+  "cacheDir": "/siashare-data/cache",
   // Local directory where SQLite db containing SiaShare metadata will be created
-  "dbDir": "C:\\temp",
+  "dbDir": "/siashare-data/db",
   // Sia API URL (default port is 9880 for testnet 9980 for mainnet)
-  "siaUrl": "http://localhost:9880",
+  "siaUrl": "http://host.docker.internal:9880",
   // Password for sia API
   "siaAPIPassword": "test",
   // Whether or not to generate self-signed certificate. If false, make sure certificate is provided as per README

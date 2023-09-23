@@ -32,22 +32,37 @@
 
 ## How To Run SiaShare
 #### Prerequisites
-- renterd running and ready to upload data (blockchain sync'd, autopilot configured, contracts formed, etc).
-- node/npm installed
+- Renterd running and ready to upload data (blockchain sync'd, autopilot configured, contracts formed, etc).
+- Node/npm installed (if running without using docker).
+- Docker (if running the docker container).
+- A reverse proxy (e.g. Caddy) is required and must be configured with an SSL certificate.
 
-##### Development
+#### Development
 1. Clone or download the repo.
 2. Run `npm install` to install the required node modules.
 3. Set all configuration values needed in *config/default.json*
 4. Run `npm start`. This will start the express server which will serve both the static content used for the UI as well as the server.
 5. Open browser and go to https://<host>:<port> where host and port are the values from *config/default.json*
 
-##### Production
+#### Production (using Node)
 1. Clone or download the repo.
 2. Run `npm ci` to install the required node modules.
 3. Set all configuration values needed in *config/default.json*
 4. Run `npm run build` and then `npm run prod`.
-5. Open browser and go to https://<host>:<port> where host and port are the values from *config/default.json*
+5. Configure reverse proxy with host and port values from *config/default.json*.
+6. Open browser to whatever host/port the reverse proxy is listening on.
+
+#### Production (building Docker image)
+1. Clone or download the repo.
+2. Run `npm ci` to install the required node modules.
+3. Run `npm run build`.
+4. Run `docker build -t siashare .`.
+
+#### Production (running Docker iamge)
+1. Build *siashare* Docker image using the instruction above or download from Github releases (TODO)
+2. Run `docker run -p 8081:8080 -v C:\\temp:/siashare-data siashare:0.0.21` where `8081` is the port you want to bind to on you local host and `C:\\temp` is the local volume you want to mount into the container to persist the SiaShare db and cache of uploaded files.
+3. Configure reverse proxy to point to whatever port you specified in place of `8081` in the example above.
+4. Open browser to whatever host/port the reverse proxy is listening on.
 
 ## Acknowledgement
 This work is supported by a [Sia Foundation](https://sia.tech/) grant.
