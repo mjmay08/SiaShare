@@ -59,7 +59,7 @@
 4. Run `docker build -t siashare .`.
 
 #### Production (running Docker iamge)
-1. Build *siashare* Docker image using the instruction above or download from Github releases (TODO)
+1. Build *siashare* Docker image using the instruction above or download from Github releases `docker pull ghcr.io/mjmay08/siashare:main`
 2. Run `docker run -p 8081:8080 -v C:\\temp:/siashare-data siashare:0.0.21` where `8081` is the port you want to bind to on you local host and `C:\\temp` is the local volume you want to mount into the container to persist the SiaShare db and cache of uploaded files.
 3. Configure reverse proxy to point to whatever port you specified in place of `8081` in the example above.
 4. Open browser to whatever host/port the reverse proxy is listening on.
