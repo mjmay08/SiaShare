@@ -30,8 +30,14 @@ jobs:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    -
+        name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
     - uses: docker/build-push-action@v4
       with:
         context: .
         push: true
-        tags: siashare:$(date +%s)
+        tags: ${{ steps.meta.outputs.tags }}
