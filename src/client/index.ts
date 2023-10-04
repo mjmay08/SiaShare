@@ -37,17 +37,22 @@ if (window.location.pathname.length > 1) {
       document.getElementById('file-list')?.appendChild(li);
     }));
     document.getElementById('download-view').style.display = "block";
+  }, (error) => {
+    alert('Failed to load room');
   });
 } else {
   const uppy = new Uppy({allowMultipleUploadBatches: false})
-  .use(Dashboard, { inline: true, target: '#uploader', proudlyDisplayPoweredByUppy: false, theme: 'dark' })
+  .use(Dashboard, { inline: true, target: '#uploader', proudlyDisplayPoweredByUppy: false, theme: 'dark', hideRetryButton: true, hideCancelButton: true })
   .use(Tus, { endpoint: apiBase + 'tus/upload', allowedMetaFields: [], onBeforeRequest: setTusHeaders, removeFingerprintOnSuccess: true })
   .use(UppyEncryption, { onBeforeEncryption: beforeUpload });
 
   uppy.on('complete', (result) => {
-    console.log('successful files:', result.successful);
-    console.log('failed files:', result.failed);
-    uppy.close();
+    if (result.failed.length > 0) {
+      document.getElementById("share-view").style.display = "none";
+    } else {
+      uppy.close();
+      document.getElementById("upload-success").style.display = "flex";
+    }
   });
 }
 

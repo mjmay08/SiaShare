@@ -71,6 +71,11 @@ body {
   }
 }
 
+#upload-success {
+  display: none;
+  font-size: x-large;
+}
+
 #share-view {
   display: none;
   flex-direction: column;

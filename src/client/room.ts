@@ -65,7 +65,7 @@ export class Room {
         // Create keychain
         this.keychain = new Keychain(key, salt);
         // Fetch room metadata
-        this.metadata =  await this.fetchRoomMetadata(id);
+        this.metadata = await this.fetchRoomMetadata(id);
         this.id = id;
     }
 
@@ -150,6 +150,11 @@ export class Room {
     private async fetchSaltForRoom(id: string): Promise<string> {
         const response = await fetch(this.API_BASE + 'room/' + id + '/salt', {
             method: 'get'
+        }).then((response) => {
+            if (!response.ok) {
+                throw response;
+            }
+            return response;
         });
         const saltResponse = await response.json();
         return saltResponse.salt;
@@ -162,6 +167,11 @@ export class Room {
                 "Content-Type": "application/json",
                 "x-reader-auth-token": await this.keychain.authTokenB64()
             }
+        }).then((response) => {
+            if (!response.ok) {
+                throw response;
+            }
+            return response;
         });
         const room = await getRoomResponse.json();
 

@@ -55,7 +55,8 @@ app.post('/api/room', jsonParser, async function(req, res) {
     const readerAuthToken = req.body.readerAuthToken;
     const salt = req.body.salt;
     if (readerAuthToken === undefined || salt === undefined) {
-        res.status(500).send('Missing salt or readerAuthToken');
+        res.status(500).send({ error: 'Missing salt or readerAuthToken' });
+        return;
     }
     const roomId = crypto.randomBytes(8).toString('hex');
     const writerAuthToken = crypto.randomBytes(16).toString('base64url');
@@ -63,7 +64,8 @@ app.post('/api/room', jsonParser, async function(req, res) {
         await metadata.createRoom(roomId, writerAuthToken, readerAuthToken, salt);
     } catch (e) {
         console.log(e);
-        res.status(500).send('Internal error');
+        res.status(500).send({ error: 'Internal error' });
+        return;
     }
     res.send({
         id: roomId,
@@ -80,16 +82,19 @@ app.put('/api/room/:id', jsonParser, async function(req, res) {
     //const md = req.body.metadata;
     const room = await metadata.getRoomById(roomId);
     if (room === undefined || room.id === undefined) {
-        throw { status_code: 400, body: `Room with id ${roomId} not found`}
+        res.status(400).send({ error: `Room with id ${roomId} not found` });
+        return;
     }
     if (room.writerAuthToken !== writerAuthToken) {
-        throw { status_code: 403, body: `Incorrect writerAuthToken`}
+        res.status(403).send({ error: `Incorrect writerAuthToken` });
+        return;
     }
     try {
         metadata.updateRoomMetadata(roomId, req.body);
     } catch (e) {
         console.log(e);
-        throw { status_code: 500, body: `Internal failure`}
+        res.status(500).send({ error: "Unknown failure" });
+        return;
     }
     res.json(req.body);
 });
@@ -103,7 +108,7 @@ app.get('/api/room/:id/salt', async function(req, res) {
     
     const room = await metadata.getRoomById(roomId);
     if (room === undefined || room.id === undefined) {
-        res.status(404).send('room not found');
+        res.status(400).send({ error: `Room with id ${roomId} not found` });
         return;
     }
     res.json({ salt: room.salt });
@@ -115,15 +120,18 @@ app.get('/api/room/:id', jsonParser, async function(req, res) {
     console.log(`Fetching room: ${roomId}`);
     const readerAuthToken = req.headers['x-reader-auth-token'];
     if (readerAuthToken === undefined) {
-        res.status(400).send('Missing readerAuthToken');
+        res.status(400).send({ error: 'Missing readerAuthToken' });
+        return;
     }
     
     const room = await metadata.getRoomById(roomId);
     if (room === undefined || room.id === undefined) {
-        throw { status_code: 400, body: `Room with id ${roomId} not found`}
+        res.status(400).send({ error: `Room with id ${roomId} not found` });
+        return;
     }
     if (room.readerAuthToken !== readerAuthToken) {
-        throw { status_code: 403, body: `Incorrect readerAuthToken`}
+        res.status(403).send({ error: `Incorrect readerAuthToken` });
+        return;
     }
     res.cookie('authToken', readerAuthToken);
     res.json(room);
@@ -141,17 +149,19 @@ app.get('/api/room/:id/files/:tusId/download/*', jsonParser, async function(req,
         if (cookie !== undefined) {
             readerAuthToken = cookie;
         } else {
-            res.status(400).send('Missing readerAuthToken');
+            res.status(400).send({ error: 'Missing readerAuthToken' });
             return;
         }
     }
     
     const room = await metadata.getRoomById(roomId);
     if (room === undefined || room.id === undefined) {
-        throw { status_code: 400, body: `Room with id ${roomId} not found`}
+        res.status(400).send({ error: `Room with id ${roomId} not found` });
+        return;
     }
     if (room.readerAuthToken !== readerAuthToken) {
-        throw { status_code: 403, body: `Incorrect readerAuthToken`}
+        res.status(403).send({ error: `Incorrect readerAuthToken` });
+        return;
     }
 
     const rangeHeader = req.headers.range;
@@ -164,7 +174,7 @@ app.get('/api/room/:id/files/:tusId/download/*', jsonParser, async function(req,
             },
              (err) =>  {
                 console.log(err);
-                res.status(404).send("Unable to return file");
+                res.status(404).send({ error: "Unable to return file" });
             }
         );
     }
@@ -203,17 +213,19 @@ app.get('/api/room/:id/files/:fileId/status', jsonParser, async function(req, re
         if (cookie !== undefined) {
             readerAuthToken = cookie;
         } else {
-            res.status(400).send('Missing readerAuthToken');
+            res.status(400).send({ error: 'Missing readerAuthToken' });
             return;
         }
     }
     
     const room = await metadata.getRoomById(roomId);
     if (room === undefined || room.id === undefined) {
-        throw { status_code: 400, body: `Room with id ${roomId} not found`}
+        res.status(400).send({ error: `Room with id ${roomId} not found` });
+        return;
     }
     if (room.readerAuthToken !== readerAuthToken) {
-        throw { status_code: 403, body: `Incorrect readerAuthToken`}
+        res.status(403).send({ error: `Incorrect readerAuthToken` });
+        return;
     }
     
     const fileStatus = await metadata.getFile(roomId, fileId);
@@ -232,7 +244,6 @@ app.use('/api/tus/upload', uploadApp);
 app.get('*', function (request, response) {
     response.sendFile(path.resolve(staticPath, 'index.html'));
 });
-
 
 (async () => {
     let useHttps: boolean = true;
