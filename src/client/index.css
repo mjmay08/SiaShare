@@ -107,7 +107,6 @@ body {
   width: 350px;
   max-width: 80%;
   height: 100px;
-  max-height: fit-content;
 }
 
 #canvas {
