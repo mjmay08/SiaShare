@@ -244,3 +244,8 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+body {
+  transition: opacity 1s;
+  opacity: 1 !important;
+}
