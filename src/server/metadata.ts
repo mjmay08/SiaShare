@@ -9,6 +9,7 @@ export class Metadata {
     private db: open.Database;
     private dbPath: string;
     private readonly dbFilename: string = 'siashare.db';
+    private roomExpirationHours: number = 24;
 
     constructor() {
         const dbDir: string = config.get('dbDir')
@@ -16,6 +17,7 @@ export class Metadata {
         if (!fs.existsSync(dbDir)){
             fs.mkdirSync(dbDir, { recursive: true });
         }
+        this.roomExpirationHours = config.get('roomExpirationInHours');
     }
 
     public async initialize() {
@@ -29,12 +31,25 @@ export class Metadata {
     }
     
     public async createRoom(roomId, writerAuthToken, readerAuthToken, salt) {
-        await this.db.exec(`INSERT INTO rooms (id, writerAuthToken, readerAuthToken, salt) VALUES('${roomId}', '${writerAuthToken}', '${readerAuthToken}', '${salt}');`);
+        await this.db.exec(
+            `INSERT INTO rooms
+            (id, writerAuthToken, readerAuthToken, salt, expirationTime)
+            VALUES
+            ('${roomId}', '${writerAuthToken}', '${readerAuthToken}', '${salt}', datetime(CURRENT_TIMESTAMP, '+${this.roomExpirationHours} hours'));`);
     }
     
     public async getRoomById(roomId) {
         const room = await this.db.get('SELECT * FROM rooms WHERE id = ?', `${roomId}`);
         return room;
+    }
+
+    public async deleteRoomById(roomId) {
+        await this.db.exec(`DELETE FROM rooms WHERE id = '${roomId}'`);
+    }
+
+    public async getExpiredRooms() {
+        const rooms = await this.db.all('SELECT * FROM rooms WHERE expirationTime < CURRENT_TIMESTAMP');
+        return rooms;
     }
     
     public async updateRoomMetadata(roomId, metadata) {
@@ -59,13 +74,39 @@ export class Metadata {
         return file;
     }
 
+    public async getAllFilesForRoom(roomId) {
+        const files = await this.db.all(`SELECT * FROM files WHERE roomId = '${roomId}'`);
+        return files;
+    }
+
+    public async deleteAllFilesForRoom(roomId) {
+        await this.db.exec(`DELETE FROM files WHERE roomId = '${roomId}'`);
+    }
+
     public async updateFileStatus(roomId: string, tusId: string, fileId: string, status: boolean) {
         const statusInt: number = status ? 1 : 0;
         await this.db.exec(`UPDATE files SET status = ${statusInt} WHERE tusId = '${tusId}' AND roomId = '${roomId}' AND fileId = '${fileId}';`);
     }
 
     private async setUpDB() {
-        await this.db.exec('CREATE TABLE IF NOT EXISTS rooms (id TEXT PRIMARY KEY, writerAuthToken TEXT NOT NULL, readerAuthToken TEXT NOT NULL, salt TEXT NOT NULL, encryptedTorrent TEXT);');
-        await this.db.exec('CREATE TABLE IF NOT EXISTS files (tusId TEXT PRIMARY KEY, roomId TEXT NOT NULL, fileId TEXT NOT NULL, status INTEGER NOT NULL, FOREIGN KEY (roomId) REFERENCES rooms (id));');
+        await this.db.exec(
+            `CREATE TABLE IF NOT EXISTS rooms (
+                id TEXT PRIMARY KEY,
+                writerAuthToken TEXT NOT NULL,
+                readerAuthToken TEXT NOT NULL,
+                salt TEXT NOT NULL,
+                encryptedTorrent TEXT,
+                expirationTime INTEGER
+            );`
+        );
+        await this.db.exec(
+            `CREATE TABLE IF NOT EXISTS files (
+                tusId TEXT PRIMARY KEY,
+                roomId TEXT NOT NULL,
+                fileId TEXT NOT NULL,
+                status INTEGER NOT NULL,
+                FOREIGN KEY (roomId) REFERENCES rooms (id)
+            );`
+        );
     }
 }

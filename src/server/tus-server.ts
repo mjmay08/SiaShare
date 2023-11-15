@@ -39,6 +39,12 @@ export class TusServer {
         return fs.statSync(path.join((this.server.datastore as FileStore).directory, fileId));
     }
 
+    public deleteFileIfExists(fileId: string): void {
+        (this.server.datastore as FileStore)
+            .remove(fileId)
+            .catch((error) => console.debug(`Removing file failed: ${JSON.stringify(error)}`));
+    }
+
     private onUploadCreate = async (req: http.IncomingMessage, res: http.ServerResponse<http.IncomingMessage>, upload: Upload) => {
         console.log("Uploading to room: " + req.headers['x-room-id']);
         const roomId: string = req.headers['x-room-id'] as string;

@@ -54,4 +54,29 @@ export class SiaService {
                 return response.body;
             });
     }
+
+    // Return a promise that resolves to true if the room was successfully deleted or it has already been deleted
+    // or resolves to false if the request failed (for example if renterd isn't running)
+    public deleteRoom(roomId: string): Promise<boolean> {
+        const requestOptions: RequestInit = {
+            method: 'DELETE',
+            redirect: 'follow',
+            headers: {
+                'Authorization': `Basic ${this.siaPassword}`
+            }
+        };
+        return fetch(`${this.siaUrl}/api/worker/objects/${this.siaRootDir}/${roomId}?batch=true`, requestOptions)
+            .then(response => { 
+                if (response.status === 404) {
+                    console.log(`deleteRoom (${roomId}): room not found on sia network`);
+                } else {
+                    console.log(`deleteRoom (${roomId}) status: ${response.status}`);
+                }
+                return true;
+            })
+            .catch(error => {
+                console.log(error);
+                return false;
+            });
+    }
 }

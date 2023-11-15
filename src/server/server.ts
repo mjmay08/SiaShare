@@ -14,6 +14,7 @@ import { WebSocketServer } from 'ws';
 import cookieParser from 'cookie-parser';
 import { parseRangeHeader } from './helpers.js';
 import { generateCert } from './generateLocalhostCert.js';
+import { cleanup } from './cleanup.js';
 
 const localCacheDir = config.get('cacheDir'); // Where TUS caches files for now
 const host = config.get('host');
@@ -273,4 +274,13 @@ app.get('*', function (request, response) {
     tracker.on('error', (err) => {
         console.log(err);
     });
+
+    // Kick off cleanup task
+    setInterval(() => {
+        try {
+            cleanup(metadata, tusServer, siaService);
+        } catch (error) {
+            console.error('Failed in cleanup task: ' + error);
+        }
+    }, 1000 * 60 * 5); // Run cleanup task every 5 minutes
 })();
