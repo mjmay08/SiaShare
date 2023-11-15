@@ -1,10 +1,12 @@
 import Uppy, { UppyFile } from '@uppy/core';
 import Dashboard from '@uppy/dashboard';
 import Tus from '@uppy/tus';
+import ScreenCapture from '@uppy/screen-capture';
 import { UppyEncryption } from './uppy-encryption';
 import type { HttpRequest } from 'tus-js-client'
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
+import '@uppy/screen-capture/dist/style.min.css';
 import { Room } from './room';
 import './index.css';
 import QRCode from 'qrcode';
@@ -44,7 +46,8 @@ if (window.location.pathname.length > 1) {
   const uppy = new Uppy({allowMultipleUploadBatches: false})
   .use(Dashboard, { inline: true, target: '#uploader', proudlyDisplayPoweredByUppy: false, theme: 'dark', hideRetryButton: true, hideCancelButton: true })
   .use(Tus, { endpoint: apiBase + 'tus/upload', allowedMetaFields: [], onBeforeRequest: setTusHeaders, removeFingerprintOnSuccess: true })
-  .use(UppyEncryption, { onBeforeEncryption: beforeUpload });
+  .use(UppyEncryption, { onBeforeEncryption: beforeUpload })
+  .use(ScreenCapture, { target: Dashboard });
 
   uppy.on('complete', (result) => {
     if (result.failed.length > 0) {
