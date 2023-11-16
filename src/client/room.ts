@@ -43,7 +43,7 @@ export class Room {
     }
 
     async finalize(encryptedTorrent: string) {
-        const response = await fetch(this.API_BASE + 'room/' + this.id, {
+        await fetch(this.API_BASE + 'room/' + this.id, {
             method: 'put',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -58,7 +58,7 @@ export class Room {
         this.afterFinalizeCallback = callback;
     }
 
-    async join(id: string, key: any) {
+    async join(id: string, key: string) {
         console.debug(`Attempting to join room: ${id}`);
         // Existing room, ask the server for the salt corresponding to this room id
         const salt: string = await this.fetchSaltForRoom(id);
@@ -90,9 +90,9 @@ export class Room {
             const file = torrent.files.find(function (file) {
               return file.name === fileId;
             });
-            var windowUrl = window.URL || window.webkitURL;
-            var decryptedFile = await this.decryptFile(nodeToWebStream(file.createReadStream()));
-            var url = windowUrl.createObjectURL(decryptedFile);
+            const windowUrl = window.URL || window.webkitURL;
+            const decryptedFile = await this.decryptFile(nodeToWebStream(file.createReadStream()));
+            const url = windowUrl.createObjectURL(decryptedFile);
             const anchor = document.createElement('a');
             anchor.href = url;
             const decryptedFilename = await this.getDecryptedFilename(file.name);
@@ -135,7 +135,7 @@ export class Room {
     }
 
     public async getDecryptedFilename(encryptedFilename: string): Promise<string> {
-        let replacedChars = encryptedFilename.replace(/\-/g, '+').replace(/\_/g, '/');
+        let replacedChars = encryptedFilename.replace(/-/g, '+').replace(/_/g, '/');
         if( (replacedChars.length % 4) !== 0) replacedChars += "=".repeat(4 - (replacedChars.length % 4));
         const byteArray = base64.toByteArray(replacedChars);
         const decryptedByteArray = await this.keychain.decryptMeta(byteArray);

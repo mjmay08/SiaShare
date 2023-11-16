@@ -23,7 +23,7 @@ export async function generateCert(hostname: string) {
         const certificateStat = fs.statSync(certificatePath);
 
         const timeDifference = Math.abs(new Date().getTime() - new Date(certificateStat.ctime).getTime());
-        let differentDays = Math.ceil(timeDifference / (1000 * 3600 * 24));
+        const differentDays = Math.ceil(timeDifference / (1000 * 3600 * 24));
         if (differentDays > 30) {
             console.log("SSL Certificate is more than 30 days old. Removing...");
         }

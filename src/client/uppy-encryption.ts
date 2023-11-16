@@ -51,7 +51,7 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
             const client = new WebTorrent();
             const promises: Promise<Buffer>[] = await fileIDs.map(async (fileID) => {
                 const file = this.uppy.getFile(fileID);
-                const fileContent: any = file.data;
+                const fileContent: Blob | File = file.data;
                 const encryptedFilename: string = await this.room.getEncryptedFilename(file.name);
                 fileContent.name = encryptedFilename;
                 this.uppy.setFileMeta(fileID, { encryptedId: encryptedFilename });
@@ -59,7 +59,7 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
                 // Since we are always using single file torrents, the torrent name will also be used for the file name
                 const torrentName = encryptedFilename;
 
-                return new Promise<Buffer>(function(resolve, reject) {
+                return new Promise<Buffer>(function(resolve) {
                     let trackerURL: string = `wss:${window.location.host}`;
                     if (window.location.port) {
                         trackerURL = trackerURL +  `:${window.location.port}`;
@@ -99,7 +99,7 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
         return Promise.all(promises).then(afterEncryptionComplete);
     };
 
-    finalizeUpload = async (fileIDs: string[]) => {
+    finalizeUpload = async () => {
         console.debug('Finalizing upload');
         // TODO
         // Call API to wait on files being successfully uploaded to Sia https://uppy.io/docs/guides/building-plugins/

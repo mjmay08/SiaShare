@@ -43,7 +43,7 @@ if (window.location.pathname.length > 1) {
       document.getElementById('file-list')?.appendChild(li);
     }));
     document.getElementById('download-view').style.display = "block";
-  }, (error) => {
+  }, () => {
     alert('Failed to load room');
   });
 } else {
@@ -78,7 +78,7 @@ async function setTusHeaders(req: HttpRequest, file: UppyFile) {
   console.log("setTusHeaders: " + room.id);
   req.setHeader('x-room-id', room.id);
   req.setHeader('x-writer-auth-token', room.writerAuthToken);
-  req.setHeader('x-file-id', (<any>file.meta).encryptedId);
+  req.setHeader('x-file-id', <string>(file.meta).encryptedId);
 }
 
 function showShareView(roomId, mainKey) {
@@ -109,7 +109,7 @@ function showShareView(roomId, mainKey) {
         }
       }
     }
-    var canvas = document.getElementById('canvas');
+    const canvas = document.getElementById('canvas');
     QRCode.toCanvas(canvas, shareURL);
     // Display the Share View
     document.getElementById("share-view").style.display = "flex";

@@ -1,11 +1,10 @@
 export function parseRangeHeader(range: string, fileSize: number): number[] {
     /** Extracting Start and End value from Range Header */
-    let [start, end]: any[] = range.replace(/bytes=/, "").split("-");
-    start = parseInt(start, 10);
-    end = end ? parseInt(end, 10) : fileSize - 1;
+    const [startStr, endStr]: string[] = range.replace(/bytes=/, "").split("-");
+    let start = parseInt(startStr, 10);
+    let end = endStr ? parseInt(endStr, 10) : fileSize - 1;
 
     if (!isNaN(start) && isNaN(end)) {
-        start = start;
         end = fileSize - 1;
     }
     if (isNaN(start) && !isNaN(end)) {

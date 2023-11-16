@@ -47,7 +47,7 @@ const tracker = new BTServer({
 
 
 // create application/json parser
-var jsonParser = BodyParser.json()
+const jsonParser = BodyParser.json()
 // Set up cookie parser
 app.use(cookieParser());
 
@@ -146,7 +146,7 @@ app.get('/api/room/:id/files/:tusId/download/*', jsonParser, async function(req,
     let readerAuthToken = req.headers['x-reader-auth-token'];
     console.log('after get header');
     if (readerAuthToken === undefined) {
-        var cookie = req.cookies.authToken;
+        const cookie = req.cookies.authToken;
         if (cookie !== undefined) {
             readerAuthToken = cookie;
         } else {
@@ -186,7 +186,7 @@ app.get('/api/room/:id/files/:tusId/download/*', jsonParser, async function(req,
         // TODO: verify fileId belongs to this roomId
         // Fetch file from FileStore cache directory
         const fileReadStream = tusServer.readFileWithRange(tusId, start, end);
-        fileReadStream.on('error', function(err) {
+        fileReadStream.on('error', function() {
             console.log('Failed to fetch file from FileStore cache, fetching from Sia');
             fetchFileFromSia();
         });
@@ -210,7 +210,7 @@ app.get('/api/room/:id/files/:fileId/status', jsonParser, async function(req, re
     console.log(`Fetching room: ${roomId}  file: ${fileId}`);
     let readerAuthToken = req.headers['x-reader-auth-token'];
     if (readerAuthToken === undefined) {
-        var cookie = req.cookies.authToken;
+        const cookie = req.cookies.authToken;
         if (cookie !== undefined) {
             readerAuthToken = cookie;
         } else {
