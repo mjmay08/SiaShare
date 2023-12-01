@@ -57,7 +57,6 @@ body {
   transition: all 0.25s ease-out;
 }
 
-
 #upload-view {
   height: calc(100% - 40px);
   width: 90%;
@@ -125,8 +124,8 @@ body {
   width: 100%; /* Full width */
   height: 100%; /* Full height */
   overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  background-color: rgb(0, 0, 0); /* Fallback color */
+  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
 }
 
 /* Modal Content */
@@ -157,22 +156,20 @@ body {
   cursor: pointer;
 }
 
-
 .action-buttons {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
 }
 
-
 .button-64 {
   align-items: center;
-  background-image: linear-gradient(144deg,#00f39c,#00aeee);
+  background-image: linear-gradient(144deg, #00f39c, #00aeee);
   border: 0;
   border-radius: 8px;
   box-shadow: rgba(151, 65, 252, 0.2) 0 15px 30px -5px;
   box-sizing: border-box;
-  color: #FFFFFF;
+  color: #ffffff;
   display: flex;
   font-size: 20px;
   justify-content: center;

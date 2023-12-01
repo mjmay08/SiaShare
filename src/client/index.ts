@@ -5,7 +5,7 @@ import Audio from '@uppy/audio';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam from '@uppy/webcam';
 import { UppyEncryption } from './uppy-encryption';
-import type { HttpRequest } from 'tus-js-client'
+import type { HttpRequest } from 'tus-js-client';
 import '@uppy/core/dist/style.min.css';
 import '@uppy/dashboard/dist/style.min.css';
 import '@uppy/audio/dist/style.min.css';
@@ -22,45 +22,63 @@ if (window.location.pathname.length > 1) {
   // Existing room. Try to load
   const roomId = window.location.pathname.replace('/', '');
   const key = window.location.hash.replace('#', '');
-  console.log("Existing room: " + roomId);
-  console.log("Key: " + key);
+  console.log('Existing room: ' + roomId);
+  console.log('Key: ' + key);
   room = new Room();
-  room.join(roomId, key).then(() => {
-    room.getFiles().then((files) => files?.forEach((file) => {
-      const li = document.createElement('li');
-      li.classList.add('file-item');
-      const div = document.createElement('div');
-      div.classList.add('filename');
-      div.appendChild(document.createTextNode(file.name))
-      li.appendChild(div);
-      const btn = document.createElement('button');
-      btn.classList.add('button-64');
-      btn.innerHTML = 'download';
-      btn.onclick = function() {
-        room.downloadFile(file.id);
-      }
-      li.appendChild(btn);
-      document.getElementById('file-list')?.appendChild(li);
-    }));
-    document.getElementById('download-view').style.display = "block";
-  }, () => {
-    alert('Failed to load room');
-  });
+  room.join(roomId, key).then(
+    () => {
+      room.getFiles().then(
+        (files) =>
+          files?.forEach((file) => {
+            const li = document.createElement('li');
+            li.classList.add('file-item');
+            const div = document.createElement('div');
+            div.classList.add('filename');
+            div.appendChild(document.createTextNode(file.name));
+            li.appendChild(div);
+            const btn = document.createElement('button');
+            btn.classList.add('button-64');
+            btn.innerHTML = 'download';
+            btn.onclick = function () {
+              room.downloadFile(file.id);
+            };
+            li.appendChild(btn);
+            document.getElementById('file-list')?.appendChild(li);
+          })
+      );
+      document.getElementById('download-view').style.display = 'block';
+    },
+    () => {
+      alert('Failed to load room');
+    }
+  );
 } else {
-  const uppy = new Uppy({allowMultipleUploadBatches: false})
-  .use(Dashboard, { inline: true, target: '#uploader', proudlyDisplayPoweredByUppy: false, theme: 'dark', hideRetryButton: true, hideCancelButton: true })
-  .use(Tus, { endpoint: apiBase + 'tus/upload', allowedMetaFields: [], onBeforeRequest: setTusHeaders, removeFingerprintOnSuccess: true })
-  .use(UppyEncryption, { onBeforeEncryption: beforeUpload })
-  .use(ScreenCapture, { target: Dashboard })
-  .use(Audio, { target: Dashboard, showAudioSourceDropdown: true })
-  .use(Webcam, { target: Dashboard, showVideoSourceDropdown: true, showRecordingLength: true });
+  const uppy = new Uppy({ allowMultipleUploadBatches: false })
+    .use(Dashboard, {
+      inline: true,
+      target: '#uploader',
+      proudlyDisplayPoweredByUppy: false,
+      theme: 'dark',
+      hideRetryButton: true,
+      hideCancelButton: true
+    })
+    .use(Tus, {
+      endpoint: apiBase + 'tus/upload',
+      allowedMetaFields: [],
+      onBeforeRequest: setTusHeaders,
+      removeFingerprintOnSuccess: true
+    })
+    .use(UppyEncryption, { onBeforeEncryption: beforeUpload })
+    .use(ScreenCapture, { target: Dashboard })
+    .use(Audio, { target: Dashboard, showAudioSourceDropdown: true })
+    .use(Webcam, { target: Dashboard, showVideoSourceDropdown: true, showRecordingLength: true });
 
   uppy.on('complete', (result) => {
     if (result.failed.length > 0) {
-      document.getElementById("share-view").style.display = "none";
+      document.getElementById('share-view').style.display = 'none';
     } else {
       uppy.close();
-      document.getElementById("upload-success").style.display = "flex";
+      document.getElementById('upload-success').style.display = 'flex';
     }
   });
 }
@@ -75,42 +93,42 @@ async function beforeUpload(): Promise<Room> {
 }
 
 async function setTusHeaders(req: HttpRequest, file: UppyFile) {
-  console.log("setTusHeaders: " + room.id);
+  console.log('setTusHeaders: ' + room.id);
   req.setHeader('x-room-id', room.id);
   req.setHeader('x-writer-auth-token', room.writerAuthToken);
-  req.setHeader('x-file-id', <string>(file.meta).encryptedId);
+  req.setHeader('x-file-id', <string>file.meta.encryptedId);
 }
 
 function showShareView(roomId, mainKey) {
-    // Set Share link
-    const shareURL = window.location.href + roomId + '#' + mainKey;
-    (<HTMLInputElement>document.getElementById("share-url")).value = shareURL;
-    // Set up copy link button
-    const copyLinkBtn = document.getElementById('copyLink');
-    if (copyLinkBtn){
-      copyLinkBtn.onclick = function() {
-        navigator.clipboard.writeText(shareURL);
+  // Set Share link
+  const shareURL = window.location.href + roomId + '#' + mainKey;
+  (<HTMLInputElement>document.getElementById('share-url')).value = shareURL;
+  // Set up copy link button
+  const copyLinkBtn = document.getElementById('copyLink');
+  if (copyLinkBtn) {
+    copyLinkBtn.onclick = function () {
+      navigator.clipboard.writeText(shareURL);
+    };
+  }
+  // Set up QR code
+  const showQRBtn = document.getElementById('showQR');
+  const qrModal = document.getElementById('qrModal');
+  const qrModalClose = document.getElementById('qrModalClose');
+  if (showQRBtn && qrModal && qrModalClose) {
+    showQRBtn.onclick = function () {
+      qrModal.style.display = 'block';
+    };
+    qrModalClose.onclick = function () {
+      qrModal.style.display = 'none';
+    };
+    window.onclick = function (event) {
+      if (event.target == qrModal) {
+        qrModal.style.display = 'none';
       }
-    }
-    // Set up QR code
-    const showQRBtn = document.getElementById('showQR');
-    const qrModal = document.getElementById('qrModal');
-    const qrModalClose = document.getElementById('qrModalClose');
-    if (showQRBtn && qrModal && qrModalClose) {
-      showQRBtn.onclick = function() {
-        qrModal.style.display = "block";
-      }
-      qrModalClose.onclick = function() {
-        qrModal.style.display = "none";
-      }
-      window.onclick = function(event) {
-        if (event.target == qrModal) {
-          qrModal.style.display = "none";
-        }
-      }
-    }
-    const canvas = document.getElementById('canvas');
-    QRCode.toCanvas(canvas, shareURL);
-    // Display the Share View
-    document.getElementById("share-view").style.display = "flex";
+    };
+  }
+  const canvas = document.getElementById('canvas');
+  QRCode.toCanvas(canvas, shareURL);
+  // Display the Share View
+  document.getElementById('share-view').style.display = 'flex';
 }

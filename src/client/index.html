@@ -1,42 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SiaShare</title>
-</head>
-<body style="opacity: 0;">
+  </head>
+  <body style="opacity: 0">
     <div class="gradient"></div>
     <div id="upload-view">
-        <div class="logo"></div>
-        <!-- Upload view -->
-        <div id="uploader"></div>
-        <div id="upload-success">Successfully uploaded</div>
-        <!-- End upload view -->
+      <div class="logo"></div>
+      <!-- Upload view -->
+      <div id="uploader"></div>
+      <div id="upload-success">Successfully uploaded</div>
+      <!-- End upload view -->
 
-        <!-- Share view -->
-        <div id="share-view">
-            <input id="share-url" class="share-url" readonly>
-            <div class="action-buttons">
-                <button id="showQR" class="button-64"><span class="text">Show QR code</span></button>
-                <button id="copyLink" class="button-64"><span class="text">Copy link</span></button>
-            </div>
-            <div id="qrModal" class="modal">
-                <div class="modal-content">
-                  <span id="qrModalClose" class="close">&times;</span>
-                  <p>Scan to download</p>
-                  <canvas id="canvas"></canvas>
-                </div>
-            </div>
+      <!-- Share view -->
+      <div id="share-view">
+        <input id="share-url" class="share-url" readonly />
+        <div class="action-buttons">
+          <button id="showQR" class="button-64"><span class="text">Show QR code</span></button>
+          <button id="copyLink" class="button-64"><span class="text">Copy link</span></button>
         </div>
-        <!-- End share view -->
+        <div id="qrModal" class="modal">
+          <div class="modal-content">
+            <span id="qrModalClose" class="close">&times;</span>
+            <p>Scan to download</p>
+            <canvas id="canvas"></canvas>
+          </div>
+        </div>
+      </div>
+      <!-- End share view -->
 
-        <!-- Download view -->
-        <div id="download-view" style="display: none;">
-            <div class="file-header">Files:</div>
-            <ul id="file-list"></ul>
-        </div>
-        <!-- End download view -->
+      <!-- Download view -->
+      <div id="download-view" style="display: none">
+        <div class="file-header">Files:</div>
+        <ul id="file-list"></ul>
+      </div>
+      <!-- End download view -->
     </div>
-</body>
+  </body>
 </html>
