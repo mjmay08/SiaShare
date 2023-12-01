@@ -53,7 +53,8 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
       const client = new WebTorrent();
       const promises: Promise<Buffer>[] = await fileIDs.map(async (fileID) => {
         const file = this.uppy.getFile(fileID);
-        const fileContent: Blob | File = file.data;
+        // eslint-disable-next-line
+        const fileContent: any = file.data;
         const encryptedFilename: string = await this.room.getEncryptedFilename(file.name);
         fileContent.name = encryptedFilename;
         this.uppy.setFileMeta(fileID, { encryptedId: encryptedFilename });
