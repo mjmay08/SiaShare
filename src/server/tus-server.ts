@@ -5,13 +5,17 @@ import fs from 'fs';
 import path from 'path';
 import { SiaService } from './sia-service.js';
 import { Metadata } from './metadata.js';
+import config from 'config';
 
 export class TusServer {
   public server: Server;
   private siaService: SiaService;
   private metadata: Metadata;
+  private uploadPassword: string;
 
-  constructor(public localCacheDir: string) {}
+  constructor(public localCacheDir: string) {
+    this.uploadPassword = config.get('uploadPassword');
+  }
 
   public initialize(metadata: Metadata, siaService: SiaService): void {
     this.metadata = metadata;
@@ -49,6 +53,12 @@ export class TusServer {
     res: http.ServerResponse<http.IncomingMessage>,
     upload: Upload
   ) => {
+    const passwordRequired: boolean = !!this.uploadPassword?.length;
+    if (passwordRequired) {
+      if (req.headers.authorization !== this.uploadPassword) {
+        throw { status_code: 401, body: 'Incorrect password' };
+      }
+    }
     console.log('Uploading to room: ' + req.headers['x-room-id']);
     const roomId: string = req.headers['x-room-id'] as string;
     if (!roomId) {

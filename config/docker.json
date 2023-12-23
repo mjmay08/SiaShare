@@ -17,5 +17,7 @@
   // Whether or not to generate self-signed certificate. If false, make sure certificate is provided as per README
   "generateCert": false,
   // How long should links remain valid before the files are removed from Sia and the link is made invalid
-  "roomExpirationInHours": 24
+  "roomExpirationInHours": 24,
+  // If set, a password will be required in order to upload files
+  "uploadPassword": ""
 }

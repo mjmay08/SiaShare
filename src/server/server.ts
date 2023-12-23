@@ -50,6 +50,19 @@ const jsonParser = BodyParser.json();
 // Set up cookie parser
 app.use(cookieParser());
 
+// Get SiaShare Config
+app.get('/api/config', async function (req, res) {
+  const appConfig = {
+    passwordRequired: false
+  };
+
+  if (config.get('uploadPassword').length) {
+    appConfig.passwordRequired = true;
+  }
+
+  res.json(appConfig);
+});
+
 // Create room
 app.post('/api/room', jsonParser, async function (req, res) {
   const readerAuthToken = req.body.readerAuthToken;
