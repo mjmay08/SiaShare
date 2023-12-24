@@ -19,5 +19,11 @@
   // How long should links remain valid before the files are removed from Sia and the link is made invalid
   "roomExpirationInHours": 24,
   // If set, a password will be required in order to upload files
-  "uploadPassword": ""
+  "uploadPassword": "",
+  // The maximum size (in bytes) per file uploaded. (Leave as 0 for no limit)
+  "maxFileSize": 0,
+  // The maximum size (in bytes) of all files selected for upload at one time. (Leave as 0 for no limit)
+  "maxTotalFileSize": 0,
+  // The maximum number of files that can be selected for upload at one time. (Leave as 0 for no limit)
+  "maxNumberOfFiles": 0
 }

@@ -53,7 +53,10 @@ app.use(cookieParser());
 // Get SiaShare Config
 app.get('/api/config', async function (req, res) {
   const appConfig = {
-    passwordRequired: false
+    passwordRequired: false,
+    maxFileSize: config.get('maxFileSize'),
+    maxTotalFileSize: config.get('maxTotalFileSize'),
+    maxNumberOfFiles: config.get('maxNumberOfFiles')
   };
 
   if (config.get('uploadPassword').length) {

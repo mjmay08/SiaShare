@@ -1,4 +1,4 @@
-import Uppy, { UppyFile } from '@uppy/core';
+import Uppy, { Restrictions, UppyFile } from '@uppy/core';
 import Dashboard from '@uppy/dashboard';
 import Tus from '@uppy/tus';
 import Audio from '@uppy/audio';
@@ -138,10 +138,40 @@ function getEnteredPassword(): string {
   return (document.getElementById('password') as HTMLInputElement).value;
 }
 
+function getUploadRestrictions(config: SiaShareConfig): Restrictions {
+  return {
+    maxFileSize: config.maxFileSize !== 0 ? config.maxFileSize : undefined,
+    maxTotalFileSize: config.maxTotalFileSize !== 0 ? config.maxTotalFileSize : undefined,
+    maxNumberOfFiles: config.maxNumberOfFiles !== 0 ? config.maxNumberOfFiles : undefined
+  };
+}
+
+function getDashboardNote(config: SiaShareConfig): string {
+  if (config.maxFileSize === 0 && config.maxTotalFileSize === 0 && config.maxNumberOfFiles === 0) {
+    return '';
+  }
+  let note: string = 'Uploads are restricted to: ';
+  if (config.maxFileSize !== 0) {
+    note += `${formatBytes(config.maxFileSize)} per file, `;
+  }
+  if (config.maxTotalFileSize !== 0) {
+    note += `${formatBytes(config.maxTotalFileSize)} for all files combined, `;
+  }
+  if (config.maxNumberOfFiles !== 0) {
+    note += `${config.maxNumberOfFiles} files`;
+  }
+  if (note.endsWith(', ')) {
+    note = note.substring(0, note.lastIndexOf(', '));
+  }
+  note += '.';
+  return note;
+}
+
 function initializeDashboard(config: SiaShareConfig): void {
   showHidePasswordInput(config.passwordRequired);
   uppy = new Uppy({
     allowMultipleUploadBatches: false,
+    restrictions: getUploadRestrictions(config),
     onBeforeUpload: () => verifyPasswordEntered(config.passwordRequired)
   })
     .use(Dashboard, {
@@ -150,7 +180,8 @@ function initializeDashboard(config: SiaShareConfig): void {
       proudlyDisplayPoweredByUppy: false,
       theme: 'dark',
       hideRetryButton: true,
-      hideCancelButton: true
+      hideCancelButton: true,
+      note: getDashboardNote(config)
     })
     .use(Tus, {
       endpoint: apiBase + 'tus/upload',
@@ -180,6 +211,21 @@ function initializeDashboard(config: SiaShareConfig): void {
   });
 }
 
+function formatBytes(bytes, decimals = 2) {
+  if (!+bytes) return '0 Bytes';
+
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
 interface SiaShareConfig {
   passwordRequired: boolean;
+  maxFileSize?: number;
+  maxTotalFileSize?: number;
+  maxNumberOfFiles?: number;
 }
