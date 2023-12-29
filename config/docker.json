@@ -6,6 +6,8 @@
   // Root directory where all files will be stored on Sia
   // Calls to the /api/worker/objects/:path will have the ":path" prepended with this value
   "siaRootDir": "siashare",
+  // Bucket where files will be stored on Sia (Empty will use "default" bucket) (Bucket will be created if it doesn't exist)
+  "siaBucket": "",
   // Local directory where uploads will be cached before uploading to Sia
   "cacheDir": "/siashare-data/cache",
   // Local directory where SQLite db containing SiaShare metadata will be created

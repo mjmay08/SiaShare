@@ -159,7 +159,6 @@ app.get('/api/room/:id/files/:tusId/download/*', jsonParser, async function (req
   const tusId = req.params.tusId;
   console.log(`Fetching room: ${roomId}  tusId: ${tusId}`);
   let readerAuthToken = req.headers['x-reader-auth-token'];
-  console.log('after get header');
   if (readerAuthToken === undefined) {
     const cookie = req.cookies.authToken;
     if (cookie !== undefined) {
