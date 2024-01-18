@@ -236,10 +236,30 @@ body {
   height: 100%;
   transition: 300ms;
   box-sizing: border-box;
+
+  &.small {
+    padding: 0;
+  }
 }
 
 .button-64:hover span {
   background: none;
+}
+
+.progress-container {
+  margin-left: 15px;
+  height: 0.8rem;
+  width: 100px;
+  border-radius: 0.4rem;
+  background: #00aeee;
+}
+
+.progress-container .progress {
+  height: 100%;
+  width: 0;
+  border-radius: 0.4rem;
+  background: #00f39c;
+  transition: width 0.4s ease;
 }
 
 /* Download View */

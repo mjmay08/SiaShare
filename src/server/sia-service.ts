@@ -48,7 +48,7 @@ export class SiaService {
       redirect: 'follow',
       headers: {
         Authorization: `Basic ${this.siaPassword}`,
-        Range: rangeHeader,
+        Range: rangeHeader
       }
     };
     let url: string = `${this.siaUrl}/api/worker/objects/${this.siaRootDir}/${roomId}/${fileId}`;
@@ -56,15 +56,13 @@ export class SiaService {
       url += `?bucket=${this.siaBucket}`;
     }
     // TODO: actually handle failure
-    return fetch(url, requestOptions).then(
-      (response) => {
-        if (response.status === 404) {
-          console.log('File not found on sia network');
-          return Promise.reject();
-        }
-        return response.body;
+    return fetch(url, requestOptions).then((response) => {
+      if (response.status === 404) {
+        console.log('File not found on sia network');
+        return Promise.reject();
       }
-    );
+      return response.body;
+    });
   }
 
   // Return a promise that resolves to true if the room was successfully deleted or it has already been deleted
@@ -104,31 +102,27 @@ export class SiaService {
         Authorization: `Basic ${this.siaPassword}`
       }
     };
-    fetch(`${this.siaUrl}/api/bus/buckets/${bucketName}`, requestOptions).then(
-      (response) => {
-        if (response.status === 404) {
-          // Bucket doesn't exist, create it
-          console.log(`Bucket ${bucketName} not found, creating...`);
-          const requestOptions: RequestInit = {
-            method: 'POST',
-            redirect: 'follow',
-            headers: {
-              Authorization: `Basic ${this.siaPassword}`
-            },
-            body: JSON.stringify({
-              name: bucketName
-            })
-          };
-          fetch(`${this.siaUrl}/api/bus/buckets`, requestOptions).then(
-            (response) => {
-              if (response.status !== 200) {
-                console.error('Failed to create bucket');
-                throw Error("Failed to create bucket");
-              }
-            }
-          );
-        }
+    fetch(`${this.siaUrl}/api/bus/buckets/${bucketName}`, requestOptions).then((response) => {
+      if (response.status === 404) {
+        // Bucket doesn't exist, create it
+        console.log(`Bucket ${bucketName} not found, creating...`);
+        const requestOptions: RequestInit = {
+          method: 'POST',
+          redirect: 'follow',
+          headers: {
+            Authorization: `Basic ${this.siaPassword}`
+          },
+          body: JSON.stringify({
+            name: bucketName
+          })
+        };
+        fetch(`${this.siaUrl}/api/bus/buckets`, requestOptions).then((response) => {
+          if (response.status !== 200) {
+            console.error('Failed to create bucket');
+            throw Error('Failed to create bucket');
+          }
+        });
       }
-    );
+    });
   }
 }

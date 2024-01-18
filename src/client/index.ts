@@ -39,9 +39,17 @@ if (window.location.pathname.length > 1) {
             li.appendChild(div);
             const btn = document.createElement('button');
             btn.classList.add('button-64');
-            btn.innerHTML = 'download';
+            const span = document.createElement('span');
+            span.classList.add('small');
+            btn.appendChild(span);
+            span.innerHTML = 'download';
             btn.onclick = function () {
-              room.downloadFile(file.id);
+              const progressBar = showFileAsDownloading(btn);
+              room.downloadFile(
+                file.id,
+                (progress: number) => onFileDownloadProgress(progressBar, progress),
+                () => onDownloadComplete(btn, progressBar)
+              );
             };
             li.appendChild(btn);
             document.getElementById('file-list')?.appendChild(li);
@@ -209,6 +217,29 @@ function initializeDashboard(config: SiaShareConfig): void {
       error.message = 'Incorrect password';
     }
   });
+}
+
+function showFileAsDownloading(btn: HTMLButtonElement): HTMLDivElement {
+  btn.style.display = 'none';
+  const progressBar = document.createElement('div');
+  progressBar.classList.add('progress-container');
+  const progressBarInternal = document.createElement('div');
+  progressBarInternal.classList.add('progress');
+  progressBar.appendChild(progressBarInternal);
+  btn.parentNode.insertBefore(progressBar, btn);
+  return progressBarInternal;
+}
+
+function onFileDownloadProgress(progressBar: HTMLDivElement, progress): void {
+  console.log(progress);
+  progressBar.style.width = `${progress * 100}%`;
+}
+
+function onDownloadComplete(btn: HTMLButtonElement, progressBar: HTMLDivElement): void {
+  if (document.contains(btn)) {
+    btn.style.display = 'flex';
+  }
+  progressBar.parentElement.remove();
 }
 
 function formatBytes(bytes, decimals = 2) {

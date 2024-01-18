@@ -78,7 +78,7 @@ export class Room {
     return files;
   }
 
-  public async downloadFile(fileId) {
+  public async downloadFile(fileId, onProgress: (progress: number) => void, onComplete: () => void) {
     // First attempt to download directly from peers using WebRTC
     const client = new WebTorrent();
     client.on('error', function (err) {
@@ -99,17 +99,17 @@ export class Room {
       anchor.click();
       windowUrl.revokeObjectURL(url);
     });
-    torrent.on('download', function (bytes) {
-      console.log('just downloaded: ' + bytes);
-      console.log('total downloaded: ' + torrent.downloaded);
-      console.log('download speed: ' + torrent.downloadSpeed);
-      console.log('progress: ' + torrent.progress);
+    torrent.on('download', function () {
+      onProgress(torrent.progress);
     });
     torrent.on('error', function (err) {
       console.log(err);
     });
     torrent.on('warning', function (err) {
       console.log(err);
+    });
+    torrent.on('done', function () {
+      onComplete();
     });
 
     // TODO need to periodically call this API until the file status is "uploaded". Right now this is assuming the file is already uploaded the first time
