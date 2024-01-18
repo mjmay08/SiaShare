@@ -46,7 +46,7 @@ const tracker = new BTServer({
 });
 
 // create application/json parser
-const jsonParser = BodyParser.json();
+const jsonParser = BodyParser.json({ limit: '100mb' });
 // Set up cookie parser
 app.use(cookieParser());
 
