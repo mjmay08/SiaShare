@@ -41,6 +41,10 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
           return new Response(encryptedStream).blob().then((encryptedBlob: Blob) => {
             this.uppy.setFileState(fileID, { data: encryptedBlob }); //ENCRYPTED
             //this.uppy.setFileState(fileID, { data: file.data}); // UNENCRYPTED - ONLY FOR TESTING
+            this.uppy.emit('preprocess-progress', file, {
+              mode: 'indeterminate',
+              message: `Encrypting files`
+            });
           });
         })
         .catch((err) => {
@@ -58,11 +62,10 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
         const encryptedFilename: string = await this.room.getEncryptedFilename(file.name);
         fileContent.name = encryptedFilename;
         this.uppy.setFileMeta(fileID, { encryptedId: encryptedFilename });
-        this.uppy.emit('preprocess-complete', file);
         // Since we are always using single file torrents, the torrent name will also be used for the file name
         const torrentName = encryptedFilename;
 
-        return new Promise<Buffer>(function (resolve) {
+        return new Promise<Buffer>((resolve) => {
           let trackerURL: string = `wss:${window.location.host}`;
           if (window.location.port) {
             trackerURL = trackerURL + `:${window.location.port}`;
@@ -76,6 +79,10 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
             },
             async (torrent) => {
               resolve(torrent.torrentFile);
+              this.uppy.emit('preprocess-progress', file, {
+                mode: 'indeterminate',
+                message: `Seeding files`
+              });
             }
           );
         });
@@ -96,6 +103,7 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
           // Easiest to save as a single string so join all torrent strings using a period since that isn't part of the base64 character set
           const concatenatedTorrentString = metadata.torrents.join('.');
           await this.room.finalize(concatenatedTorrentString);
+          this.uppy.emit('preprocess-complete');
         },
         (err) => {
           console.log(err);
