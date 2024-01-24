@@ -7,16 +7,22 @@
   </head>
   <body style="opacity: 0">
     <div class="gradient"></div>
+    <div class="logo"></div>
     <div id="upload-view">
-      <div class="logo"></div>
       <!-- Upload view -->
-      <div id="password-input">
-        Password: <input type="password" id="password" />
-        <div class="tooltip">
-          <span class="tooltiptext">A password is required in order to upload files</span>
+      <div id="upload-view-inner">
+        <div id="password-input">
+          Password: <input type="password" id="password" />
+          <div class="tooltip">
+            <span class="tooltiptext">A password is required in order to upload files</span>
+          </div>
+        </div>
+        <div id="uploader"></div>
+        <div id="recent-rooms">
+          <div id="recent-rooms-header">Recent Uploads</div>
+          <div id="recent-room-list"></div>
         </div>
       </div>
-      <div id="uploader"></div>
       <div id="upload-success">Successfully uploaded</div>
       <!-- End upload view -->
 

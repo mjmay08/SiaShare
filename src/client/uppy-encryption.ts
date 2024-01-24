@@ -102,7 +102,8 @@ export class UppyEncryption extends BasePlugin<UppyEncryptionOptions> {
           );
           // Easiest to save as a single string so join all torrent strings using a period since that isn't part of the base64 character set
           const concatenatedTorrentString = metadata.torrents.join('.');
-          await this.room.finalize(concatenatedTorrentString);
+          const fileNames: string[] = fileIDs.map((fileId) => this.uppy.getFile(fileId).name);
+          await this.room.finalize(concatenatedTorrentString, fileNames);
           this.uppy.emit('preprocess-complete');
         },
         (err) => {

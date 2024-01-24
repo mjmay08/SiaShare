@@ -4,6 +4,8 @@ body {
   margin: 0;
   font-family: cursive;
   color: white;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes rotate {
@@ -49,7 +51,7 @@ body {
   display: flex;
   place-content: center;
   align-items: center;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* This is just to transition when you change the viewport size. */
@@ -58,15 +60,22 @@ body {
 }
 
 #upload-view {
-  height: calc(100% - 40px);
   width: 90%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
 
   #uploader {
     max-width: 100%;
+  }
+
+  #upload-view-inner {
+    max-width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
   }
 }
 
@@ -107,6 +116,69 @@ body {
   }
 }
 
+#recent-rooms {
+  min-height: 150px;
+  overflow-y: auto;
+  border: white;
+  border-style: inset;
+  border-width: thin;
+  border-radius: 5px;
+  margin: 15px 0;
+  padding: 10px;
+  display: none;
+
+  #recent-rooms-header {
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .recent-room-item {
+    border-style: inset;
+    border-width: thin;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+
+    .row1 {
+      display: flex;
+
+      .files {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: calc(100% - 60px);
+      }
+
+      .remove-row {
+        margin-left: auto;
+        background-color: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        outline: none;
+      }
+    }
+
+    .row2 {
+      display: flex;
+      margin-top: 5px;
+
+      button {
+        margin-right: 30px;
+        cursor: pointer;
+        border: none;
+        border-radius: 3px;
+        background-color: rgb(255, 255, 255, 0.1);
+        color: white;
+        padding: 5px;
+      }
+      button:hover {
+        background-color: rgb(255, 255, 255, 0.5);
+      }
+    }
+  }
+}
+
 #upload-success {
   display: none;
   font-size: x-large;
@@ -142,7 +214,7 @@ body {
   background-position: bottom;
   width: 350px;
   max-width: 80%;
-  height: 100px;
+  min-height: 100px;
 }
 
 #canvas {

@@ -14,10 +14,13 @@ import '@uppy/webcam/dist/style.min.css';
 import { Room } from './room';
 import './index.css';
 import QRCode from 'qrcode';
+import { RoomDatabase } from './roomDb';
 
 const apiBase = window.location.origin + '/api/';
 let room: Room;
 let uppy: Uppy;
+
+const db = new RoomDatabase();
 
 if (window.location.pathname.length > 1) {
   // Existing room. Try to load
@@ -25,7 +28,7 @@ if (window.location.pathname.length > 1) {
   const key = window.location.hash.replace('#', '');
   console.log('Existing room: ' + roomId);
   console.log('Key: ' + key);
-  room = new Room();
+  room = new Room(db);
   room.join(roomId, key).then(
     () => {
       room.getFiles().then(
@@ -68,7 +71,7 @@ if (window.location.pathname.length > 1) {
 }
 
 async function beforeUpload(): Promise<Room> {
-  room = new Room();
+  room = new Room(db);
   await room.create();
   room.afterFinalize(() => {
     showShareView(room.id, room.keychain.keyB64);
@@ -86,7 +89,7 @@ async function setTusHeaders(req: HttpRequest, file: UppyFile) {
 
 function showShareView(roomId, mainKey) {
   // Set Share link
-  const shareURL = window.location.href + roomId + '#' + mainKey;
+  const shareURL = getShareLink(roomId, mainKey);
   (<HTMLInputElement>document.getElementById('share-url')).value = shareURL;
   // Set up copy link button
   const copyLinkBtn = document.getElementById('copyLink');
@@ -116,6 +119,10 @@ function showShareView(roomId, mainKey) {
   QRCode.toCanvas(canvas, shareURL);
   // Display the Share View
   document.getElementById('share-view').style.display = 'flex';
+}
+
+function getShareLink(roomId: string, key: string): string {
+  return window.location.href + roomId + '#' + key;
 }
 
 /**
@@ -176,7 +183,9 @@ function getDashboardNote(config: SiaShareConfig): string {
 }
 
 function initializeDashboard(config: SiaShareConfig): void {
+  document.getElementById('upload-view-inner').style.display = 'flex';
   showHidePasswordInput(config.passwordRequired);
+  getAllRecentRooms();
   uppy = new Uppy({
     allowMultipleUploadBatches: false,
     restrictions: getUploadRestrictions(config),
@@ -189,7 +198,8 @@ function initializeDashboard(config: SiaShareConfig): void {
       theme: 'dark',
       hideRetryButton: true,
       hideCancelButton: true,
-      note: getDashboardNote(config)
+      note: getDashboardNote(config),
+      height: 400
     })
     .use(Tus, {
       endpoint: apiBase + 'tus/upload',
@@ -207,6 +217,7 @@ function initializeDashboard(config: SiaShareConfig): void {
       document.getElementById('share-view').style.display = 'none';
     } else {
       showHidePasswordInput(false);
+      document.getElementById('upload-view-inner').style.display = 'none';
       uppy.close();
       document.getElementById('upload-success').style.display = 'flex';
     }
@@ -252,6 +263,67 @@ function formatBytes(bytes, decimals = 2) {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
+async function getAllRecentRooms(): Promise<void> {
+  try {
+    document.getElementById('recent-rooms').style.display = 'none';
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    // Delete rooms older than 24 hours to clear up indexeddb
+    await db.rooms.where('creationTime').below(oneDayAgo).delete();
+    // Fetch all recent rooms for display
+    const recentRooms = await db.rooms.where('creationTime').above(oneDayAgo).toArray();
+    const recentRoomsParent = document.getElementById('recent-room-list');
+    while (recentRoomsParent.firstChild) {
+      recentRoomsParent.removeChild(recentRoomsParent.lastChild);
+    }
+    recentRooms.forEach((room) => {
+      const roomDiv = document.createElement('div');
+      roomDiv.classList.add('recent-room-item');
+
+      const row1Div = document.createElement('div');
+      row1Div.classList.add('row1');
+      const filesDiv = document.createElement('div');
+      filesDiv.classList.add('files');
+      filesDiv.textContent = room.files.join(', ');
+      const deleteIcon = document.createElement('button');
+      deleteIcon.innerText = 'X';
+      deleteIcon.classList.add('remove-row');
+      deleteIcon.onclick = function () {
+        console.log(`Remove room ${room.id} from recent rooms`);
+        db.rooms.delete(room.id);
+        getAllRecentRooms();
+      };
+      row1Div.appendChild(filesDiv);
+      row1Div.appendChild(deleteIcon);
+
+      const row2Div = document.createElement('div');
+      row2Div.classList.add('row2');
+      const openLink = document.createElement('button');
+      openLink.innerText = 'Open';
+      openLink.onclick = function () {
+        window.open(getShareLink(room.id, room.key), '_blank').focus();
+      };
+      const copyLink = document.createElement('button');
+      copyLink.onclick = function () {
+        navigator.clipboard.writeText(getShareLink(room.id, room.key));
+      };
+      copyLink.innerText = 'Copy Link';
+      row2Div.appendChild(openLink);
+      row2Div.appendChild(copyLink);
+
+      roomDiv.appendChild(row1Div);
+      roomDiv.appendChild(row2Div);
+      recentRoomsParent.appendChild(roomDiv);
+    });
+    // Only show if there are recent rooms
+    if (recentRooms?.length) {
+      document.getElementById('recent-rooms').style.display = 'block';
+    }
+  } catch (ex) {
+    console.log(ex);
+  }
 }
 
 interface SiaShareConfig {

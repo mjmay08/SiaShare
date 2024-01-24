@@ -4,6 +4,7 @@ import WebTorrent from 'webtorrent/dist/webtorrent.min.js';
 import nodeToWebStream from 'readable-stream-node-to-web';
 import parseTorrent from 'parse-torrent';
 import base64 from 'base64-js';
+import { RoomDatabase } from './roomDb';
 
 export type RoomMetadataResponse = {
   torrents: parseTorrent.Instance[];
@@ -22,6 +23,11 @@ export class Room {
   private encoder = new TextEncoder();
   private decoder = new TextDecoder();
   private afterFinalizeCallback: () => void;
+  private db: RoomDatabase;
+
+  constructor(db: RoomDatabase) {
+    this.db = db;
+  }
 
   async create() {
     // Creating a new room
@@ -41,7 +47,7 @@ export class Room {
     this.keychain.setAuthToken(this.writerAuthToken);
   }
 
-  async finalize(encryptedTorrent: string) {
+  async finalize(encryptedTorrent: string, fileNames: string[]) {
     await fetch(this.API_BASE + 'room/' + this.id, {
       method: 'put',
       headers: { 'Content-Type': 'application/json' },
@@ -51,6 +57,8 @@ export class Room {
       })
     });
     this.afterFinalizeCallback();
+
+    this.saveRoomToIndexedDB(this.id, this.keychain.keyB64, fileNames);
   }
 
   public afterFinalize(callback: () => void) {
@@ -183,5 +191,15 @@ export class Room {
       metadata.torrents.push(parsedTorrent as parseTorrent.Instance);
     }
     return metadata;
+  }
+
+  private saveRoomToIndexedDB(id: string, key: string, fileNames: string[]): void {
+    this.db
+      .transaction('rw', this.db.rooms, async () => {
+        await this.db.rooms.add({ id: id, key: key, files: fileNames, creationTime: new Date() });
+      })
+      .catch((e) => {
+        console.error(e);
+      });
   }
 }

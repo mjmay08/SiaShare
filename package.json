@@ -59,6 +59,7 @@
     "bittorrent-tracker": "^10.0.11",
     "config": "^3.3.9",
     "cookie-parser": "^1.4.6",
+    "dexie": "^3.2.4",
     "node-fetch": "^3.3.1",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "qrcode": "^1.5.3",
